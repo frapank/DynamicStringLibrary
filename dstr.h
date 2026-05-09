@@ -29,6 +29,12 @@
 #define dstrcat(...) \
     GET_DSTRCAT(__VA_ARGS__, dstrcat_custom, dstrcat_base)(__VA_ARGS__)
 
+#define dstrdup(x) _Generic((x), \
+    dstr: dstrdup_str, \
+    dstrhd: dstrdup_dstrhd, \
+    dstrhdp: dstrdup_dstrhdp \
+)(x)
+
 struct dstrhd {
     unsigned int len;
     unsigned int cap;
@@ -42,6 +48,9 @@ typedef char* dstr;
 static inline unsigned int dstrlen_str(dstr s);
 static inline unsigned int dstrlen_dstrhd(struct dstrhd s);
 static inline unsigned int dstrlen_dstrhdp(struct dstrhd* s);
+static inline dstr dstrdup_str(dstr s);
+static inline dstr dstrdup_dstrhd(dstrhd s);
+static inline dstr dstrdup_dstrhdp(dstrhdp s);
 static inline struct dstrhd* dstrfull(dstr s);
 static dstr dstrcat_base(dstr s, const dstr cs);
 static dstr dstrcat_custom(dstr s, const dstr cs, unsigned int cap);
@@ -55,6 +64,13 @@ static void dstrfree(dstr s);
 static inline unsigned int dstrlen_str(dstr s){return dstrfull(s)->len-1;};
 static inline unsigned int dstrlen_dstrhd(struct dstrhd s) {return s.len-1;};
 static inline unsigned int dstrlen_dstrhdp(struct dstrhd* s) {return s->len-1;};
+
+static inline dstr dstrdup_str(dstr s) {
+    dstrhd* hd = dstrfull(s);
+    return dstrnew_custom(hd->buf, hd->cap);
+}
+static inline dstr dstrdup_dstrhd(dstrhd s) {return dstrnew_custom(s.buf, s.cap);}
+static inline dstr dstrdup_dstrhdp(dstrhdp s) {return dstrnew_custom(s->buf, s->cap);}
 
 static inline struct dstrhd* dstrfull(dstr s) 
 {
