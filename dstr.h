@@ -8,14 +8,25 @@
 #include <stdbool.h>
 
 // Public
+#define DSTR_MIN_ALLOC_CAP 10
+
 #define dstrlen(x) _Generic((x), \
     dstr: dstrlen_str, \
     dstrhd: dstrlen_dstrhd, \
     dstrhdp: dstrlen_dstrhdp \
 )(x)
 
+#define GET_DSTRNEW(_1, _2, NAME, ...) NAME
+#define dstrnew(...) \
+    GET_DSTRNEW(__VA_ARGS__, dstrnew_custom, dstrnew_base)(__VA_ARGS__)
+
+#define GET_DSTRCAT(_1,_2,_3,NAME,...) NAME
+#define dstrcat(...) \
+    GET_DSTRCAT(__VA_ARGS__, dstrcat_custom, dstrcat_base)(__VA_ARGS__)
+
 struct dstrhd {
     unsigned int len;
+    unsigned int cap;
     char buf[];
 };
 
@@ -27,8 +38,10 @@ static inline unsigned int dstrlen_str(dstr s);
 static inline unsigned int dstrlen_dstrhd(struct dstrhd s);
 static inline unsigned int dstrlen_dstrhdp(struct dstrhd* s);
 static inline struct dstrhd* dstrfull(dstr s);
-static void dstrdebug(dstr s);
-static dstr dstrnew(const char* msg);
+static dstr dstrcat_base(dstr s, const dstr cs);
+static dstr dstrcat_custom(dstr s, const dstr cs, unsigned int cap);
+static dstr dstrnew_base(const char* msg);
+static dstr dstrnew_custom(const char* msg, unsigned int cap);
 static void dstrfree(dstr s);
 
 // Implementation
@@ -43,44 +56,95 @@ static inline struct dstrhd* dstrfull(dstr s)
     return (struct dstrhd*)((char*)s - offsetof(struct dstrhd, buf));
 };
 
-static void dstrdebug(dstr s)
-{
-    bool endchar = (s[dstrlen(s)-2] == '\n') ? 1 : 0;
-    printf(endchar ? "[String]: %s" : "[String]: %s\n", s);
-    printf("[Len]: %u\n", dstrlen(s));
-    printf("[Addr]: %p\n", s);
-}
-
-static dstr dstrcat(dstr s, const dstr cs)
+static dstr dstrcat_base(dstr s, const dstr cs)
 {
     dstrhd* hd = dstrfull(s); 
     dstrhd* chd = dstrfull(cs); 
 
     unsigned int new_len = hd->len + chd->len - 1;
-    unsigned int new_mem = sizeof(dstrhd) + new_len;
 
-    dstrhd* tmp = realloc(hd, new_mem);
-    if(!tmp) return NULL;
+    dstrhd* tmp = hd;
 
-    memcpy(((char*)tmp->buf + tmp->len -1), chd->buf, chd->len);
+    if(hd->cap < new_len) {
+        unsigned int new_cap = tmp->cap * 2;
+        if (new_cap < new_len) new_cap = new_len;
+        
+        tmp = realloc(hd, sizeof(dstrhd) + new_cap);
+        if(!tmp) return NULL;
+
+        tmp->cap = new_cap;
+    }
+
+    memcpy(tmp->buf + tmp->len - 1, chd->buf, chd->len);
     tmp->len = new_len;
 
     return tmp->buf;
 }
 
-static dstr dstrnew(const char* msg)
+static dstr dstrcat_custom(dstr s, const dstr cs, unsigned int cap)
+{
+    dstrhd* hd = dstrfull(s); 
+    dstrhd* chd = dstrfull(cs); 
+
+    unsigned int new_len = hd->len + chd->len - 1;
+
+    dstrhd* tmp = hd;
+
+    if(hd->cap < new_len) {
+        unsigned int new_cap = cap;
+        if (new_cap < new_len) new_cap = new_len;
+        
+        tmp = realloc(hd, sizeof(dstrhd) + new_cap);
+        if(!tmp) return NULL;
+
+        tmp->cap = new_cap;
+    }
+
+    memcpy(tmp->buf + tmp->len - 1, chd->buf, chd->len);
+    tmp->len = new_len;
+
+    return tmp->buf;
+}
+
+static dstr dstrnew_base(const char* msg)
 {
     unsigned int s_len = strlen(msg) + 1;
+    unsigned int alloc_size = s_len;
 
-    struct dstrhd* hd = malloc((sizeof(struct dstrhd)) + (s_len));
+    if(s_len < DSTR_MIN_ALLOC_CAP) 
+        alloc_size = DSTR_MIN_ALLOC_CAP;
+
+    struct dstrhd* hd = malloc((sizeof(struct dstrhd)) + (alloc_size));
     if(!hd)
         return NULL;
 
+    hd->cap = alloc_size;
     hd->len = s_len;
     dstr s_ret = hd->buf;
 
     memcpy(s_ret, msg, s_len);
     
+    return s_ret;
+}
+
+static dstr dstrnew_custom(const char* msg, unsigned int cap)
+{
+    unsigned int s_len = strlen(msg) + 1;
+    unsigned int alloc_size = cap;
+
+    if(s_len > cap) 
+        alloc_size = s_len;
+
+    struct dstrhd* hd = malloc((sizeof(struct dstrhd)) + (alloc_size));
+    if(!hd)
+        return NULL;
+
+    hd->cap = alloc_size;
+    hd->len = s_len;
+    dstr s_ret = hd->buf;
+
+    memcpy(s_ret, msg, s_len);
+
     return s_ret;
 }
 
