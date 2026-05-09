@@ -12,7 +12,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-// Public
+/* Public */
 #define DSTR_MIN_ALLOC_CAP 10
 
 #define dstrlen(x) _Generic((x), \
@@ -45,26 +45,33 @@ typedef struct dstrhd dstrhd;
 typedef struct dstrhd* dstrhdp;
 typedef char* dstr;
 
+// Functions
 static inline unsigned int dstrlen_str(dstr s);
 static inline unsigned int dstrlen_dstrhd(struct dstrhd s);
 static inline unsigned int dstrlen_dstrhdp(struct dstrhd* s);
+
 static inline dstr dstrdup_str(dstr s);
 static inline dstr dstrdup_dstrhd(dstrhd s);
 static inline dstr dstrdup_dstrhdp(dstrhdp s);
-static inline struct dstrhd* dstrfull(dstr s);
+
 static dstr dstrcat_base(dstr s, const dstr cs);
 static dstr dstrcat_custom(dstr s, const dstr cs, unsigned int cap);
 static dstr dstrnew_base(const char* msg);
+
+static inline struct dstrhd* dstrfull(dstr s);
+
 static dstr dstrnew_custom(const char* msg, unsigned int cap);
 static void dstrfree(dstr s);
 
-// Implementation
+/* Implementation */
 #ifdef DSTR_IMPLEMENTATION
 
+// strlen
 static inline unsigned int dstrlen_str(dstr s){return dstrfull(s)->len-1;};
 static inline unsigned int dstrlen_dstrhd(struct dstrhd s) {return s.len-1;};
 static inline unsigned int dstrlen_dstrhdp(struct dstrhd* s) {return s->len-1;};
 
+// strdup
 static inline dstr dstrdup_str(dstr s) {
     dstrhd* hd = dstrfull(s);
     return dstrnew_custom(hd->buf, hd->cap);
@@ -72,11 +79,13 @@ static inline dstr dstrdup_str(dstr s) {
 static inline dstr dstrdup_dstrhd(dstrhd s) {return dstrnew_custom(s.buf, s.cap);}
 static inline dstr dstrdup_dstrhdp(dstrhdp s) {return dstrnew_custom(s->buf, s->cap);}
 
+// strfull
 static inline struct dstrhd* dstrfull(dstr s) 
 {
     return (struct dstrhd*)((char*)s - offsetof(struct dstrhd, buf));
 };
 
+// strcat
 static dstr dstrcat_base(dstr s, const dstr cs)
 {
     dstrhd* hd = dstrfull(s); 
@@ -129,6 +138,7 @@ static dstr dstrcat_custom(dstr s, const dstr cs, unsigned int cap)
     return tmp->buf;
 }
 
+// strnew
 static dstr dstrnew_base(const char* msg)
 {
     unsigned int s_len = strlen(msg) + 1;
@@ -171,6 +181,7 @@ static dstr dstrnew_custom(const char* msg, unsigned int cap)
     return s_ret;
 }
 
+// strfree
 static void dstrfree(dstr s)
 {
     struct dstrhd* strhd = dstrfull(s);
