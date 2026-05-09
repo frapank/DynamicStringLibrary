@@ -82,6 +82,7 @@ static dstr dstrcat_base(dstr s, const dstr cs)
 
     memcpy(tmp->buf + tmp->len - 1, chd->buf, chd->len);
     tmp->len = new_len;
+    hd = tmp;
 
     return tmp->buf;
 }
@@ -107,6 +108,7 @@ static dstr dstrcat_custom(dstr s, const dstr cs, unsigned int cap)
 
     memcpy(tmp->buf + tmp->len - 1, chd->buf, chd->len);
     tmp->len = new_len;
+    hd = tmp;
 
     return tmp->buf;
 }
