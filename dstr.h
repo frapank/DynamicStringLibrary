@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 Francesco Carbone (@frapank)
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #ifndef DSTR_H
 #define DSTR_H
 
