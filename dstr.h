@@ -51,25 +51,40 @@ typedef struct dstrhd* dstrhdp;
 typedef char* dstr;
 
 // Functions
-static inline unsigned int dstrlen_str(dstr s);
-static inline unsigned int dstrlen_dstrhd(struct dstrhd s);
-static inline unsigned int dstrlen_dstrhdp(struct dstrhd* s);
+static inline struct dstrhd* dstrfull(dstr s) 
+    __attribute__((pure, warn_unused_result, always_inline));
 
-static inline dstr dstrdup_str(dstr s);
-static inline dstr dstrdup_dstrhd(dstrhd s);
-static inline dstr dstrdup_dstrhdp(dstrhdp s);
+static inline unsigned int dstrlen_str(dstr s)
+    __attribute__((pure, nonnull(1)));
+static inline unsigned int dstrlen_dstrhd(struct dstrhd s)
+    __attribute__((pure));
+static inline unsigned int dstrlen_dstrhdp(struct dstrhd* s)
+    __attribute__((pure, nonnull(1)));
 
-static void dstrclear_str(dstr s);
-static void dstrclear_dstrhdp(struct dstrhd* s);
+static inline dstr dstrdup_str(dstr s)
+    __attribute__((nonnull(1), malloc, warn_unused_result));
+static inline dstr dstrdup_dstrhd(struct dstrhd s)
+    __attribute__((malloc, warn_unused_result));
+static inline dstr dstrdup_dstrhdp(struct dstrhd* s)
+    __attribute__((nonnull(1), malloc, warn_unused_result));
 
-static dstr dstrcat_base(dstr s, const dstr cs);
-static dstr dstrcat_custom(dstr s, const dstr cs, unsigned int cap);
+static inline void dstrclear_str(dstr s)
+    __attribute__((nonnull(1), always_inline));
+static void dstrclear_dstrhdp(struct dstrhd* s)
+    __attribute__((nonnull(1)));
 
-static inline struct dstrhd* dstrfull(dstr s);
+static dstr dstrcat_base(dstr s, const dstr cs)
+    __attribute__((nonnull(1,2), warn_unused_result));
+static dstr dstrcat_custom(dstr s, const dstr cs, unsigned int cap)
+    __attribute__((nonnull(1,2), warn_unused_result));
 
-static dstr dstrnew_base(const char* msg);
-static dstr dstrnew_custom(const char* msg, unsigned int cap);
-static void dstrfree(dstr s);
+static dstr dstrnew_base(const char* msg)
+    __attribute__((nonnull(1), malloc, warn_unused_result, returns_nonnull));
+static dstr dstrnew_custom(const char* msg, unsigned int cap)
+    __attribute__((nonnull(1), malloc, warn_unused_result, returns_nonnull));
+
+static void dstrfree(dstr s)
+    __attribute__((nonnull(1)));
 
 /* Implementation */
 #ifdef DSTR_IMPLEMENTATION
@@ -88,7 +103,7 @@ static inline dstr dstrdup_dstrhd(dstrhd s) {return dstrnew_custom(s.buf, s.cap)
 static inline dstr dstrdup_dstrhdp(dstrhdp s) {return dstrnew_custom(s->buf, s->cap);}
 
 // strclear
-static void dstrclear_str(dstr s) {dstrclear_dstrhdp(dstrfull(s));}
+static inline void dstrclear_str(dstr s) {dstrclear_dstrhdp(dstrfull(s));}
 static void dstrclear_dstrhdp(struct dstrhd* s)
 {
     if(!s || s->len <= 1) return;
