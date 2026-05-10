@@ -91,6 +91,19 @@ dstr copy = dstrdup(s);
 dstrclear(s);
 ```
 
+### Resize string
+
+```c
+s = dstrresize(s, 128);
+hd = dstrresize(hd, 256);
+```
+
+`dstrresize` adjusts the capacity of an existing string. It accepts both `dstr` and `dstrhdp` (header pointer) types, returning a potentially reallocated pointer.
+
+* If the requested capacity is smaller than the current allocation, the string is left unchanged.
+* If the requested capacity is larger, the string is reallocated and the internal header updated.
+* The returned pointer **must be reassigned**, as the buffer may have moved during reallocation.
+
 ### Free string
 
 ```c
@@ -117,7 +130,6 @@ The `dstr` pointer refers directly to the buffer, while metadata (length and cap
 
 ## TODO
 
-* dstrresize: resize string buffer
 * dstrinsert: insert substring at position
 * dstrcmp / dstricmp: string comparison
 * dstrfind: search character
