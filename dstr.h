@@ -21,6 +21,17 @@
     dstrhdp: dstrlen_dstrhdp \
 )(x)
 
+#define dstrdup(x) _Generic((x), \
+    dstr: dstrdup_str, \
+    dstrhd: dstrdup_dstrhd, \
+    dstrhdp: dstrdup_dstrhdp \
+)(x)
+
+#define dstrclear(x) _Generic((x), \
+    dstr: dstrclear_str, \
+    dstrhdp: dstrclear_dstrhdp \
+)(x)
+
 #define GET_DSTRNEW(_1, _2, NAME, ...) NAME
 #define dstrnew(...) \
     GET_DSTRNEW(__VA_ARGS__, dstrnew_custom, dstrnew_base)(__VA_ARGS__)
@@ -28,12 +39,6 @@
 #define GET_DSTRCAT(_1,_2,_3,NAME,...) NAME
 #define dstrcat(...) \
     GET_DSTRCAT(__VA_ARGS__, dstrcat_custom, dstrcat_base)(__VA_ARGS__)
-
-#define dstrdup(x) _Generic((x), \
-    dstr: dstrdup_str, \
-    dstrhd: dstrdup_dstrhd, \
-    dstrhdp: dstrdup_dstrhdp \
-)(x)
 
 struct dstrhd {
     unsigned int len;
@@ -54,12 +59,15 @@ static inline dstr dstrdup_str(dstr s);
 static inline dstr dstrdup_dstrhd(dstrhd s);
 static inline dstr dstrdup_dstrhdp(dstrhdp s);
 
+static void dstrclear_str(dstr s);
+static void dstrclear_dstrhdp(struct dstrhd* s);
+
 static dstr dstrcat_base(dstr s, const dstr cs);
 static dstr dstrcat_custom(dstr s, const dstr cs, unsigned int cap);
-static dstr dstrnew_base(const char* msg);
 
 static inline struct dstrhd* dstrfull(dstr s);
 
+static dstr dstrnew_base(const char* msg);
 static dstr dstrnew_custom(const char* msg, unsigned int cap);
 static void dstrfree(dstr s);
 
@@ -78,6 +86,15 @@ static inline dstr dstrdup_str(dstr s) {
 }
 static inline dstr dstrdup_dstrhd(dstrhd s) {return dstrnew_custom(s.buf, s.cap);}
 static inline dstr dstrdup_dstrhdp(dstrhdp s) {return dstrnew_custom(s->buf, s->cap);}
+
+// strclear
+static void dstrclear_str(dstr s) {dstrclear_dstrhdp(dstrfull(s));}
+static void dstrclear_dstrhdp(struct dstrhd* s)
+{
+    if(!s || s->len <= 1) return;
+    memset(s->buf, 0, s->len);
+    s->len = 1;
+}
 
 // strfull
 static inline struct dstrhd* dstrfull(dstr s) 
