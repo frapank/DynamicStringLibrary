@@ -32,6 +32,11 @@
     dstrhdp: dstrclear_dstrhdp \
 )(x)
 
+#define dstrresize(x, cap) _Generic((x), \
+    dstr: dstrresize_str, \
+    dstrhd*: dstrresize_dstrhdp \
+)(x, cap)
+
 #define GET_DSTRNEW(_1, _2, NAME, ...) NAME
 #define dstrnew(...) \
     GET_DSTRNEW(__VA_ARGS__, dstrnew_custom, dstrnew_base)(__VA_ARGS__)
@@ -72,6 +77,11 @@ static inline void dstrclear_str(dstr s)
     __attribute__((nonnull(1), always_inline));
 static void dstrclear_dstrhdp(struct dstrhd* s)
     __attribute__((nonnull(1)));
+
+static dstr dstrresize_str(dstr s, unsigned int cap)
+    __attribute__((nonnull(1), malloc, warn_unused_result));
+static dstrhd* dstrresize_dstrhdp(dstrhd* s, unsigned int cap)
+    __attribute__((nonnull(1), malloc, warn_unused_result ));
 
 static dstr dstrcat_base(dstr s, const dstr cs)
     __attribute__((nonnull(1,2), warn_unused_result));
@@ -117,6 +127,35 @@ static inline struct dstrhd* dstrfull(dstr s)
     return (struct dstrhd*)((char*)s - offsetof(struct dstrhd, buf));
 };
 
+// strresize
+static dstr dstrresize_str(dstr s, unsigned int cap)
+{
+    dstrhd* hd = dstrfull(s);
+
+    if(hd->cap >= cap)
+        return hd->buf;
+
+    dstrhd* tmp = realloc(hd, sizeof(dstrhd) + cap);
+    if(!tmp)
+        return NULL;
+
+    tmp->cap = cap;
+    return tmp->buf;
+}
+
+static dstrhd* dstrresize_dstrhdp(dstrhd* s, unsigned int cap)
+{
+    if(s->cap >= cap)
+        return s;
+
+    dstrhd* tmp = realloc(s, sizeof(dstrhd) + cap);
+    if(!tmp)
+        return NULL;
+
+    tmp->cap = cap;
+    return tmp;
+}
+
 // strcat
 static dstr dstrcat_base(dstr s, const dstr cs)
 {
@@ -139,7 +178,6 @@ static dstr dstrcat_base(dstr s, const dstr cs)
 
     memcpy(tmp->buf + tmp->len - 1, chd->buf, chd->len);
     tmp->len = new_len;
-    hd = tmp;
 
     return tmp->buf;
 }
@@ -165,7 +203,6 @@ static dstr dstrcat_custom(dstr s, const dstr cs, unsigned int cap)
 
     memcpy(tmp->buf + tmp->len - 1, chd->buf, chd->len);
     tmp->len = new_len;
-    hd = tmp;
 
     return tmp->buf;
 }
