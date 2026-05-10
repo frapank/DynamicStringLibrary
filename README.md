@@ -38,8 +38,8 @@ Some functions use C11 `_Generic` to provide type-aware dispatch at compile time
 Functions such as `dstrlen`, `dstrdup`, and `dstrclear` automatically resolve to different implementations depending on the input type:
 
 * `dstr` (raw string pointer)
-* `dstrhd`
-* `dstrhdp`
+* `dstrhd` (header)
+* `dstrhdp` (pointer to header)
 
 This allows the same function name to correctly handle different representations of the same string data without requiring manual conversion or explicit function selection.
 
@@ -47,11 +47,14 @@ This allows the same function name to correctly handle different representations
 
 ### Create a string
 
+You can create a string with the following code:
+
 ```c
 dstr s = dstrnew("hello");
 ```
 
-### Create a string with custom capacity
+The default capacity of the string is 10. If the string is longer, the capacity will automatically match the string length.
+You can assign a custom capacity with:
 
 ```c
 dstr s = dstrnew("hello", 64);
@@ -61,17 +64,21 @@ If the specified capacity is smaller than the required size, it is automatically
 
 ### Get length
 
+This function returns an `unsigned int` with the string length. It works with `dstr`, `dstrhd`, and `dstrhdp`:
+
 ```c
 unsigned int len = dstrlen(s);
 ```
 
 ### Concatenate
 
+You can concatenate two strings. The first argument should be a `dstr`, and the second can be a simple `char*`:
+
 ```c
 s = dstrcat(s, " world");
 ```
 
-With custom capacity:
+As with `dstrnew`, you can also specify a capacity:
 
 ```c
 s = dstrcat(s, " world", 128);
@@ -81,11 +88,15 @@ If the provided capacity is insufficient, it is increased automatically.
 
 ### Duplicate
 
+This function returns a duplicate of the provided string. It works with `dstr`, `dstrhd`, and `dstrhdp`:
+
 ```c
 dstr copy = dstrdup(s);
 ```
 
 ### Clear string
+
+This function clears the string while retaining the allocated memory. It works with `dstr` and `dstrhdp`:
 
 ```c
 dstrclear(s);
@@ -93,18 +104,19 @@ dstrclear(s);
 
 ### Resize string
 
+`dstrresize` adjusts the capacity of an existing string. It accepts both `dstr` and `dstrhdp` types, returning a potentially reallocated pointer:
+
 ```c
 s = dstrresize(s, 128);
 hd = dstrresize(hd, 256);
 ```
 
-`dstrresize` adjusts the capacity of an existing string. It accepts both `dstr` and `dstrhdp` (header pointer) types, returning a potentially reallocated pointer.
-
-* If the requested capacity is smaller than the current allocation, the string is left unchanged.
-* If the requested capacity is larger, the string is reallocated and the internal header updated.
-* The returned pointer **must be reassigned**, as the buffer may have moved during reallocation.
+If the provided capacity is insufficient, it is increased automatically.
+The returned pointer **must be reassigned**, as the buffer may have moved during reallocation.
 
 ### Free string
+
+This function frees the string:
 
 ```c
 dstrfree(s);
