@@ -64,7 +64,7 @@ If the specified capacity is smaller than the required size, it is automatically
 
 ### Get length
 
-This function returns an `unsigned int` with the string length. It works with `dstr`, `dstrhd`, and `dstrhdp`:
+`dstrlen` returns an `unsigned int` with the string length. It works with `dstr`, `dstrhd`, and `dstrhdp`:
 
 ```c
 unsigned int len = dstrlen(s);
@@ -72,13 +72,13 @@ unsigned int len = dstrlen(s);
 
 ### Concatenate
 
-You can concatenate two strings. The first argument should be a `dstr`, and the second can be a simple `char*`:
+`dstrcat` can concatenate two strings. The first argument should be a `dstr`, and the second can be a simple `char*`:
 
 ```c
 s = dstrcat(s, " world");
 ```
 
-As with `dstrnew`, you can also specify a capacity:
+`dstrcat` as with `dstrnew`, you can also specify a capacity:
 
 ```c
 s = dstrcat(s, " world", 128);
@@ -88,7 +88,7 @@ If the provided capacity is insufficient, it is increased automatically.
 
 ### Duplicate
 
-This function returns a duplicate of the provided string. It works with `dstr`, `dstrhd`, and `dstrhdp`:
+`dstrdup` returns a duplicate of the provided string. It works with `dstr`, `dstrhd`, and `dstrhdp`:
 
 ```c
 dstr copy = dstrdup(s);
@@ -96,7 +96,7 @@ dstr copy = dstrdup(s);
 
 ### Clear string
 
-This function clears the string while retaining the allocated memory. It works with `dstr` and `dstrhdp`:
+`dstrclear` clears the string while retaining the allocated memory. It works with `dstr` and `dstrhdp`:
 
 ```c
 dstrclear(s);
@@ -114,9 +114,21 @@ hd = dstrresize(hd, 256);
 If the provided capacity is insufficient, it is increased automatically.
 The returned pointer **must be reassigned**, as the buffer may have moved during reallocation.
 
+### Compare strings
+
+`dstrcmp` compares two dynamic strings and returns `1` if they are equal, `0` otherwise. The function accepts both `dstr` and `dstrhd*` types in any order:
+
+```c
+if(dstrcmp(s, hd)) {
+    // ...
+}
+```
+
+This function **does not** accept raw `char*` arguments. If you need to compare a `dstr` with a `char*`, use the standard C `strcmp` function instead.
+
 ### Free string
 
-This function frees the string:
+`dstrfree` frees the string:
 
 ```c
 dstrfree(s);
@@ -143,7 +155,6 @@ The `dstr` pointer refers directly to the buffer, while metadata (length and cap
 ## TODO
 
 * dstrinsert: insert substring at position
-* dstrcmp / dstricmp: string comparison
 * dstrfind: search character
 * dstrpush: append single character
 
