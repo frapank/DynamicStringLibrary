@@ -45,6 +45,10 @@
 #define dstrnew(...) \
     GET_DSTRNEW(__VA_ARGS__, dstrnew_custom, dstrnew_base)(__VA_ARGS__)
 
+#define GET_DSTRCAT(_1,_2,_3,NAME,...) NAME
+#define dstrcat(...) \
+    GET_DSTRCAT(__VA_ARGS__, dstrcat_custom, dstrcat_base)(__VA_ARGS__)
+
 #define GET_DSTRAPPEND(_1,_2,_3,NAME,...) NAME
 #define dstrappend(...) \
     GET_DSTRAPPEND(__VA_ARGS__, dstrappend_custom, dstrappend_base)(__VA_ARGS__)
@@ -95,6 +99,11 @@ static inline _Bool strcmp_str_str(dstr s1, dstr s2)
     __attribute__((pure, nonnull(1,2), warn_unused_result, always_inline));
 static _Bool strcmp_hd_hd(dstrhd* h1, dstrhd* h2)
     __attribute__((pure, nonnull(1,2), warn_unused_result));
+
+static dstr dstrcat_base(dstr s, const char* cs)
+    __attribute__((nonnull(1,2), warn_unused_result));
+static dstr dstrcat_custom(dstr s, const char* cs, unsigned int cap)
+    __attribute__((nonnull(1,2), warn_unused_result));
 
 static dstr dstrappend_base(dstr s, const dstr cs)
     __attribute__((nonnull(1,2), warn_unused_result));
@@ -185,6 +194,57 @@ static _Bool strcmp_hd_hd(dstrhd* h1, dstrhd* h2)
         return 0;
 
     return memcmp(h1->buf, h2->buf, h1->len - 1) == 0;
+}
+
+// strcat
+static dstr dstrcat_base(dstr s, const char* cs)
+{
+    dstrhd* hd = dstrfull(s); 
+    unsigned int cs_len = strlen(cs); 
+
+    unsigned int new_len = hd->len + cs_len - 1;
+
+    dstrhd* tmp = hd;
+
+    if(hd->cap < new_len) {
+        unsigned int new_cap = tmp->cap * 2;
+        if (new_cap < new_len) new_cap = new_len;
+        
+        tmp = realloc(hd, sizeof(dstrhd) + new_cap);
+        if(!tmp) return NULL;
+
+        tmp->cap = new_cap;
+    }
+
+    memcpy(tmp->buf + tmp->len - 1, cs, cs_len);
+    tmp->len = new_len;
+
+    return tmp->buf;
+}
+
+static dstr dstrcat_custom(dstr s, const char* cs, unsigned int cap)
+{
+    dstrhd* hd = dstrfull(s); 
+    unsigned int cs_len = strlen(cs); 
+
+    unsigned int new_len = hd->len + cs_len - 1;
+
+    dstrhd* tmp = hd;
+
+    if(hd->cap < new_len) {
+        unsigned int new_cap = cap;
+        if (new_cap < new_len) new_cap = new_len;
+        
+        tmp = realloc(hd, sizeof(dstrhd) + new_cap);
+        if(!tmp) return NULL;
+
+        tmp->cap = new_cap;
+    }
+
+    memcpy(tmp->buf + tmp->len - 1, cs, cs_len);
+    tmp->len = new_len;
+
+    return tmp->buf;
 }
 
 // strappend
