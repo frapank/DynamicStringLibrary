@@ -54,8 +54,8 @@
     GET_DSTRAPPEND(__VA_ARGS__, dstrappend_custom, dstrappend_base)(__VA_ARGS__)
 
 struct dstrhd {
-    unsigned int len;
-    unsigned int cap;
+    size_t len;
+    size_t cap;
     char buf[];
 };
 
@@ -67,11 +67,11 @@ typedef char* dstr;
 static inline struct dstrhd* dstrfull(dstr s) 
     __attribute__((pure, warn_unused_result, always_inline));
 
-static inline unsigned int dstrlen_str(dstr s)
+static inline size_t dstrlen_str(dstr s)
     __attribute__((pure, nonnull(1)));
-static inline unsigned int dstrlen_dstrhd(struct dstrhd s)
+static inline size_t dstrlen_dstrhd(struct dstrhd s)
     __attribute__((pure));
-static inline unsigned int dstrlen_dstrhdp(struct dstrhd* s)
+static inline size_t dstrlen_dstrhdp(struct dstrhd* s)
     __attribute__((pure, nonnull(1)));
 
 static inline dstr dstrdup_str(dstr s)
@@ -86,9 +86,9 @@ static inline void dstrclear_str(dstr s)
 static void dstrclear_dstrhdp(struct dstrhd* s)
     __attribute__((nonnull(1)));
 
-static dstr dstrresize_str(dstr s, unsigned int cap)
+static dstr dstrresize_str(dstr s, size_t cap)
     __attribute__((nonnull(1), malloc, warn_unused_result));
-static dstrhd* dstrresize_dstrhdp(dstrhd* s, unsigned int cap)
+static dstrhd* dstrresize_dstrhdp(dstrhd* s, size_t cap)
     __attribute__((nonnull(1), malloc, warn_unused_result ));
 
 static inline _Bool dstrcmp_str_hd(dstr s1, dstrhd* h2)
@@ -102,17 +102,17 @@ static _Bool dstrcmp_hd_hd(dstrhd* h1, dstrhd* h2)
 
 static dstr dstrcat_base(dstr s, const char* cs)
     __attribute__((nonnull(1,2), warn_unused_result));
-static dstr dstrcat_custom(dstr s, const char* cs, unsigned int cap)
+static dstr dstrcat_custom(dstr s, const char* cs, size_t cap)
     __attribute__((nonnull(1,2), warn_unused_result));
 
 static dstr dstrappend_base(dstr s, const dstr cs)
     __attribute__((nonnull(1,2), warn_unused_result));
-static dstr dstrappend_custom(dstr s, const dstr cs, unsigned int cap)
+static dstr dstrappend_custom(dstr s, const dstr cs, size_t cap)
     __attribute__((nonnull(1,2), warn_unused_result));
 
 static dstr dstrnew_base(const char* msg)
     __attribute__((nonnull(1), malloc, warn_unused_result, returns_nonnull));
-static dstr dstrnew_custom(const char* msg, unsigned int cap)
+static dstr dstrnew_custom(const char* msg, size_t cap)
     __attribute__((nonnull(1), malloc, warn_unused_result, returns_nonnull));
 
 static void dstrfree(dstr s)
@@ -122,9 +122,9 @@ static void dstrfree(dstr s)
 #ifdef DSTR_IMPLEMENTATION
 
 // strlen
-static inline unsigned int dstrlen_str(dstr s){return dstrfull(s)->len-1;};
-static inline unsigned int dstrlen_dstrhd(struct dstrhd s) {return s.len-1;};
-static inline unsigned int dstrlen_dstrhdp(struct dstrhd* s) {return s->len-1;};
+static inline size_t dstrlen_str(dstr s){return dstrfull(s)->len-1;};
+static inline size_t dstrlen_dstrhd(struct dstrhd s) {return s.len-1;};
+static inline size_t dstrlen_dstrhdp(struct dstrhd* s) {return s->len-1;};
 
 // strdup
 static inline dstr dstrdup_str(dstr s) {
@@ -150,7 +150,7 @@ static inline struct dstrhd* dstrfull(dstr s)
 };
 
 // strresize
-static dstr dstrresize_str(dstr s, unsigned int cap)
+static dstr dstrresize_str(dstr s, size_t cap)
 {
     dstrhd* hd = dstrfull(s);
 
@@ -165,7 +165,7 @@ static dstr dstrresize_str(dstr s, unsigned int cap)
     return tmp->buf;
 }
 
-static dstrhd* dstrresize_dstrhdp(dstrhd* s, unsigned int cap)
+static dstrhd* dstrresize_dstrhdp(dstrhd* s, size_t cap)
 {
     if(s->cap >= cap)
         return s;
@@ -193,12 +193,12 @@ static _Bool dstrcmp_hd_hd(dstrhd* h1, dstrhd* h2)
 
 // strcat & strappend helper
 __attribute__((always_inline))
-static inline char* _dstr_cat_append_helper(dstrhd* hd, const char* s, unsigned int s_len, unsigned int new_len)
+static inline char* _dstr_cat_append_helper(dstrhd* hd, const char* s, size_t s_len, size_t new_len)
 {
     dstrhd* tmp = hd;
 
     if (hd->cap < new_len) {
-        unsigned int new_cap = tmp->cap * 2;
+        size_t new_cap = tmp->cap * 2;
         if (new_cap < new_len) new_cap = new_len;
 
         tmp = realloc(hd, sizeof(dstrhd) + new_cap);
@@ -218,17 +218,17 @@ static inline char* _dstr_cat_append_helper(dstrhd* hd, const char* s, unsigned 
 static dstr dstrcat_base(dstr s, const char* cs)
 {
     dstrhd* hd = dstrfull(s);
-    unsigned int cs_len = strlen(cs);
-    unsigned int new_len = hd->len + cs_len - 1;
+    size_t cs_len = strlen(cs);
+    size_t new_len = hd->len + cs_len - 1;
 
     return _dstr_cat_append_helper(hd, cs, cs_len, new_len);
 }
 
-static dstr dstrcat_custom(dstr s, const char* cs, unsigned int cap)
+static dstr dstrcat_custom(dstr s, const char* cs, size_t cap)
 {
     dstrhd* hd = dstrfull(s);
-    unsigned int cs_len = strlen(cs);
-    unsigned int new_len = hd->len + cs_len - 1;
+    size_t cs_len = strlen(cs);
+    size_t new_len = hd->len + cs_len - 1;
 
     if (hd->cap < new_len) {
         if (cap < new_len) cap = new_len;
@@ -243,16 +243,16 @@ static dstr dstrappend_base(dstr s, const dstr cs)
 {
     dstrhd* hd = dstrfull(s);
     dstrhd* chd = dstrfull(cs);
-    unsigned int new_len = hd->len + chd->len - 1;
+    size_t new_len = hd->len + chd->len - 1;
 
     return _dstr_cat_append_helper(hd, chd->buf, chd->len, new_len);
 }
 
-static dstr dstrappend_custom(dstr s, const dstr cs, unsigned int cap)
+static dstr dstrappend_custom(dstr s, const dstr cs, size_t cap)
 {
     dstrhd* hd = dstrfull(s);
     dstrhd* chd = dstrfull(cs);
-    unsigned int new_len = hd->len + chd->len - 1;
+    size_t new_len = hd->len + chd->len - 1;
 
     if (hd->cap < new_len) {
         if (cap < new_len) cap = new_len;
@@ -265,8 +265,8 @@ static dstr dstrappend_custom(dstr s, const dstr cs, unsigned int cap)
 // strnew
 static dstr dstrnew_base(const char* msg)
 {
-    unsigned int s_len = strlen(msg) + 1;
-    unsigned int alloc_size = s_len;
+    size_t s_len = strlen(msg) + 1;
+    size_t alloc_size = s_len;
 
     if(s_len < DSTR_MIN_ALLOC_CAP) 
         alloc_size = DSTR_MIN_ALLOC_CAP;
@@ -284,10 +284,10 @@ static dstr dstrnew_base(const char* msg)
     return s_ret;
 }
 
-static dstr dstrnew_custom(const char* msg, unsigned int cap)
+static dstr dstrnew_custom(const char* msg, size_t cap)
 {
-    unsigned int s_len = strlen(msg) + 1;
-    unsigned int alloc_size = cap;
+    size_t s_len = strlen(msg) + 1;
+    size_t alloc_size = cap;
 
     if(s_len > cap) 
         alloc_size = s_len;
