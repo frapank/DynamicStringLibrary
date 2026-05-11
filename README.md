@@ -70,21 +70,45 @@ If the specified capacity is smaller than the required size, it is automatically
 unsigned int len = dstrlen(s);
 ```
 
-### Append
+### Concatenate (`dstr` to `char*`)
 
-`dstrappend` can concatenate two strings. The first and second argument should be a `dstr`:
+The `dstrcat` function concatenates two strings. The first argument **must** be a `dstr`, and the second can be either a `char*` or a `dstr`.
+
+> If you pass a `dstr` as the second argument, it is recommended to use `dstrappend` instead.
+
+Example usage:
 
 ```c
-s = dstrappend(s, s1);
+s = dstrcat(s, "example");
 ```
 
-`dstrappend` as with `dstrnew`, you can also specify a capacity:
+Like `dstrnew`, you can also specify a custom capacity:
+
+```c
+s = dstrcat(s, "example", 128);
+```
+
+If the provided capacity is insufficient, it will be **automatically increased**.
+
+### Append (`dstr` to `dstr`)
+
+The `dstrappend` function concatenates two dynamic strings. Both the first and second arguments **must** be a `dstr`.
+
+> You **cannot** pass a `char*` as the second argument, use `dstrcat` instead for that case.
+
+Example usage:
+
+```c
+s = dstrappend(s, s2);
+```
+
+Like `dstrnew`, you can also specify a custom capacity:
 
 ```c
 s = dstrappend(s, s2, 128);
 ```
 
-If the provided capacity is insufficient, it is increased automatically.
+If the provided capacity is insufficient, it will be **automatically increased**.
 
 ### Duplicate
 
@@ -154,7 +178,6 @@ The `dstr` pointer refers directly to the buffer, while metadata (length and cap
 
 ## TODO
 
-* dstrcat: concatenate a dstr with a char*
 * dstrinsert: insert substring at position
 * dstrfind: search character
 * dstrpush: append single character
