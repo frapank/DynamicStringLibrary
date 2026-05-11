@@ -37,8 +37,8 @@
 )(x, cap)
 
 #define dstrcmp(x, y) _Generic((x), \
-    dstrhd*: _Generic((y), dstrhd*: strcmp_hd_hd, dstr: strcmp_hd_str), \
-    dstr: _Generic((y), dstrhd*: strcmp_str_hd, dstr: strcmp_str_str) \
+    dstrhd*: _Generic((y), dstrhd*: dstrcmp_hd_hd, dstr: dstrcmp_hd_str), \
+    dstr: _Generic((y), dstrhd*: dstrcmp_str_hd, dstr: dstrcmp_str_str) \
 )(x, y)
 
 #define GET_DSTRNEW(_1, _2, NAME, ...) NAME
@@ -91,13 +91,13 @@ static dstr dstrresize_str(dstr s, unsigned int cap)
 static dstrhd* dstrresize_dstrhdp(dstrhd* s, unsigned int cap)
     __attribute__((nonnull(1), malloc, warn_unused_result ));
 
-static inline _Bool strcmp_str_hd(dstr s1, dstrhd* h2)
+static inline _Bool dstrcmp_str_hd(dstr s1, dstrhd* h2)
     __attribute__((pure, nonnull(1,2), warn_unused_result, always_inline));
-static inline _Bool strcmp_hd_str(dstrhd* h1, dstr s2)
+static inline _Bool dstrcmp_hd_str(dstrhd* h1, dstr s2)
     __attribute__((pure, nonnull(1,2), warn_unused_result, always_inline));
-static inline _Bool strcmp_str_str(dstr s1, dstr s2)
+static inline _Bool dstrcmp_str_str(dstr s1, dstr s2)
     __attribute__((pure, nonnull(1,2), warn_unused_result, always_inline));
-static _Bool strcmp_hd_hd(dstrhd* h1, dstrhd* h2)
+static _Bool dstrcmp_hd_hd(dstrhd* h1, dstrhd* h2)
     __attribute__((pure, nonnull(1,2), warn_unused_result));
 
 static dstr dstrcat_base(dstr s, const char* cs)
@@ -179,16 +179,11 @@ static dstrhd* dstrresize_dstrhdp(dstrhd* s, unsigned int cap)
 }
 
 // strcmp
-static inline _Bool strcmp_str_hd(dstr s1, dstrhd* h2)
-{return strcmp_hd_hd(dstrfull(s1), h2);}
+static inline _Bool dstrcmp_str_hd(dstr s1, dstrhd* h2) {return dstrcmp_hd_hd(dstrfull(s1), h2);}
+static inline _Bool dstrcmp_hd_str(dstrhd* h1, dstr s2) {return dstrcmp_hd_hd(h1, dstrfull(s2));}
+static inline _Bool dstrcmp_str_str(dstr s1, dstr s2) {return dstrcmp_hd_hd(dstrfull(s1), dstrfull(s2));}
 
-static inline _Bool strcmp_hd_str(dstrhd* h1, dstr s2)
-{return strcmp_hd_hd(h1, dstrfull(s2));}
-
-static inline _Bool strcmp_str_str(dstr s1, dstr s2)
-{return strcmp_hd_hd(dstrfull(s1), dstrfull(s2));}
-
-static _Bool strcmp_hd_hd(dstrhd* h1, dstrhd* h2)
+static _Bool dstrcmp_hd_hd(dstrhd* h1, dstrhd* h2)
 {
     if(h1->len != h2->len) 
         return 0;
