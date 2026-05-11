@@ -196,106 +196,75 @@ static _Bool strcmp_hd_hd(dstrhd* h1, dstrhd* h2)
     return memcmp(h1->buf, h2->buf, h1->len - 1) == 0;
 }
 
-// strcat
-static dstr dstrcat_base(dstr s, const char* cs)
+// strcat & strappend helper
+__attribute__((always_inline))
+static inline char* _dstr_cat_append_helper(dstrhd* hd, const char* s, unsigned int s_len, unsigned int new_len)
 {
-    dstrhd* hd = dstrfull(s); 
-    unsigned int cs_len = strlen(cs); 
-
-    unsigned int new_len = hd->len + cs_len - 1;
-
     dstrhd* tmp = hd;
 
-    if(hd->cap < new_len) {
+    if (hd->cap < new_len) {
         unsigned int new_cap = tmp->cap * 2;
         if (new_cap < new_len) new_cap = new_len;
-        
+
         tmp = realloc(hd, sizeof(dstrhd) + new_cap);
-        if(!tmp) return NULL;
+        if (!tmp) return NULL;
 
         tmp->cap = new_cap;
     }
 
-    memcpy(tmp->buf + tmp->len - 1, cs, cs_len);
+    memcpy(tmp->buf + tmp->len - 1, s, s_len);
+
     tmp->len = new_len;
 
     return tmp->buf;
 }
 
-static dstr dstrcat_custom(dstr s, const char* cs, unsigned int cap)
+// strcat
+static dstr dstrcat_base(dstr s, const char* cs)
 {
-    dstrhd* hd = dstrfull(s); 
-    unsigned int cs_len = strlen(cs); 
-
+    dstrhd* hd = dstrfull(s);
+    unsigned int cs_len = strlen(cs);
     unsigned int new_len = hd->len + cs_len - 1;
 
-    dstrhd* tmp = hd;
+    return _dstr_cat_append_helper(hd, cs, cs_len, new_len);
+}
 
-    if(hd->cap < new_len) {
-        unsigned int new_cap = cap;
-        if (new_cap < new_len) new_cap = new_len;
-        
-        tmp = realloc(hd, sizeof(dstrhd) + new_cap);
-        if(!tmp) return NULL;
+static dstr dstrcat_custom(dstr s, const char* cs, unsigned int cap)
+{
+    dstrhd* hd = dstrfull(s);
+    unsigned int cs_len = strlen(cs);
+    unsigned int new_len = hd->len + cs_len - 1;
 
-        tmp->cap = new_cap;
+    if (hd->cap < new_len) {
+        if (cap < new_len) cap = new_len;
+        hd->cap = cap;
     }
 
-    memcpy(tmp->buf + tmp->len - 1, cs, cs_len);
-    tmp->len = new_len;
-
-    return tmp->buf;
+    return _dstr_cat_append_helper(hd, cs, cs_len, new_len);
 }
 
 // strappend
 static dstr dstrappend_base(dstr s, const dstr cs)
 {
-    dstrhd* hd = dstrfull(s); 
-    dstrhd* chd = dstrfull(cs); 
-
+    dstrhd* hd = dstrfull(s);
+    dstrhd* chd = dstrfull(cs);
     unsigned int new_len = hd->len + chd->len - 1;
 
-    dstrhd* tmp = hd;
-
-    if(hd->cap < new_len) {
-        unsigned int new_cap = tmp->cap * 2;
-        if (new_cap < new_len) new_cap = new_len;
-        
-        tmp = realloc(hd, sizeof(dstrhd) + new_cap);
-        if(!tmp) return NULL;
-
-        tmp->cap = new_cap;
-    }
-
-    memcpy(tmp->buf + tmp->len - 1, chd->buf, chd->len);
-    tmp->len = new_len;
-
-    return tmp->buf;
+    return _dstr_cat_append_helper(hd, chd->buf, chd->len, new_len);
 }
 
 static dstr dstrappend_custom(dstr s, const dstr cs, unsigned int cap)
 {
-    dstrhd* hd = dstrfull(s); 
-    dstrhd* chd = dstrfull(cs); 
-
+    dstrhd* hd = dstrfull(s);
+    dstrhd* chd = dstrfull(cs);
     unsigned int new_len = hd->len + chd->len - 1;
 
-    dstrhd* tmp = hd;
-
-    if(hd->cap < new_len) {
-        unsigned int new_cap = cap;
-        if (new_cap < new_len) new_cap = new_len;
-        
-        tmp = realloc(hd, sizeof(dstrhd) + new_cap);
-        if(!tmp) return NULL;
-
-        tmp->cap = new_cap;
+    if (hd->cap < new_len) {
+        if (cap < new_len) cap = new_len;
+        hd->cap = cap;
     }
 
-    memcpy(tmp->buf + tmp->len - 1, chd->buf, chd->len);
-    tmp->len = new_len;
-
-    return tmp->buf;
+    return _dstr_cat_append_helper(hd, chd->buf, chd->len, new_len);
 }
 
 // strnew
