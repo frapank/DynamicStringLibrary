@@ -45,9 +45,9 @@
 #define dstrnew(...) \
     GET_DSTRNEW(__VA_ARGS__, dstrnew_custom, dstrnew_base)(__VA_ARGS__)
 
-#define GET_DSTRCAT(_1,_2,_3,NAME,...) NAME
-#define dstrcat(...) \
-    GET_DSTRCAT(__VA_ARGS__, dstrcat_custom, dstrcat_base)(__VA_ARGS__)
+#define GET_DSTRAPPEND(_1,_2,_3,NAME,...) NAME
+#define dstrappend(...) \
+    GET_DSTRAPPEND(__VA_ARGS__, dstrappend_custom, dstrappend_base)(__VA_ARGS__)
 
 struct dstrhd {
     unsigned int len;
@@ -96,9 +96,9 @@ static inline _Bool strcmp_str_str(dstr s1, dstr s2)
 static _Bool strcmp_hd_hd(dstrhd* h1, dstrhd* h2)
     __attribute__((pure, nonnull(1,2), warn_unused_result));
 
-static dstr dstrcat_base(dstr s, const dstr cs)
+static dstr dstrappend_base(dstr s, const dstr cs)
     __attribute__((nonnull(1,2), warn_unused_result));
-static dstr dstrcat_custom(dstr s, const dstr cs, unsigned int cap)
+static dstr dstrappend_custom(dstr s, const dstr cs, unsigned int cap)
     __attribute__((nonnull(1,2), warn_unused_result));
 
 static dstr dstrnew_base(const char* msg)
@@ -187,8 +187,8 @@ static _Bool strcmp_hd_hd(dstrhd* h1, dstrhd* h2)
     return memcmp(h1->buf, h2->buf, h1->len - 1) == 0;
 }
 
-// strcat
-static dstr dstrcat_base(dstr s, const dstr cs)
+// strappend
+static dstr dstrappend_base(dstr s, const dstr cs)
 {
     dstrhd* hd = dstrfull(s); 
     dstrhd* chd = dstrfull(cs); 
@@ -213,7 +213,7 @@ static dstr dstrcat_base(dstr s, const dstr cs)
     return tmp->buf;
 }
 
-static dstr dstrcat_custom(dstr s, const dstr cs, unsigned int cap)
+static dstr dstrappend_custom(dstr s, const dstr cs, unsigned int cap)
 {
     dstrhd* hd = dstrfull(s); 
     dstrhd* chd = dstrfull(cs); 
