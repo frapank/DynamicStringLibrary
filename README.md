@@ -70,18 +70,18 @@ If the specified capacity is smaller than the required size, it is automatically
 unsigned int len = dstrlen(s);
 ```
 
-### Concatenate
+### Append
 
-`dstrcat` can concatenate two strings. The first argument should be a `dstr`, and the second can be a simple `char*`:
+`dstrappend` can concatenate two strings. The first and second argument should be a `dstr`:
 
 ```c
-s = dstrcat(s, " world");
+s = dstrappend(s, s1);
 ```
 
-`dstrcat` as with `dstrnew`, you can also specify a capacity:
+`dstrappend` as with `dstrnew`, you can also specify a capacity:
 
 ```c
-s = dstrcat(s, " world", 128);
+s = dstrappend(s, s2, 128);
 ```
 
 If the provided capacity is insufficient, it is increased automatically.
@@ -154,6 +154,7 @@ The `dstr` pointer refers directly to the buffer, while metadata (length and cap
 
 ## TODO
 
+* dstrcat: concatenate a dstr with a char*
 * dstrinsert: insert substring at position
 * dstrfind: search character
 * dstrpush: append single character
