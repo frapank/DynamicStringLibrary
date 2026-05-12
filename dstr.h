@@ -96,9 +96,9 @@ static void dstrclear_dstrhdp(struct dstrhd* s)
     __attribute__((nonnull(1)));
 
 static dstr dstrresize_str(dstr s, size_t cap)
-    __attribute__((nonnull(1), malloc, warn_unused_result));
+    __attribute__((nonnull(1), warn_unused_result));
 static dstrhd* dstrresize_dstrhdp(dstrhd* s, size_t cap)
-    __attribute__((nonnull(1), malloc, warn_unused_result ));
+    __attribute__((nonnull(1), warn_unused_result ));
 
 static inline _Bool dstrcmp_str_hd(dstr s1, dstrhd* h2)
     __attribute__((pure, nonnull(1,2), warn_unused_result, always_inline));
