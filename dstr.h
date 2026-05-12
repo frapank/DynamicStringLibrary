@@ -6,6 +6,15 @@
 #ifndef DSTR_H
 #define DSTR_H
 
+#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
+#error "DynamicStringLibrary supporto only C11+ versions"
+#endif
+#if !defined(__x86_64__) && !defined(_M_X64) && \
+    !defined(__i386__) && !defined(_M_IX86) && \
+    !defined(__aarch64__) && !defined(__arm__)
+#error "DynamicStringLibrary supports only common architectures: x86, x86-64, ARM, ARM64"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -300,5 +309,4 @@ static void dstrfree(dstr s)
 }
 
 #endif
-
 #endif
