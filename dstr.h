@@ -139,7 +139,7 @@ static inline void dstrclear_str(dstr s) {dstrclear_dstrhdp(dstrfull(s));}
 static void dstrclear_dstrhdp(struct dstrhd* s)
 {
     if(!s || s->len <= 1) return;
-    memset(s->buf, 0, s->len);
+    memset(s->buf, 0, s->cap);
     s->len = 1;
 }
 
@@ -193,13 +193,15 @@ static _Bool dstrcmp_hd_hd(dstrhd* h1, dstrhd* h2)
 
 // strcat & strappend helper
 __attribute__((always_inline))
-static inline char* _dstr_cat_append_helper(dstrhd* hd, const char* s, size_t s_len, size_t new_len)
+static inline char* _dstr_cat_append_helper(dstrhd* hd, const char* s, 
+        size_t s_len, size_t new_len, size_t hint_cap)
 {
     dstrhd* tmp = hd;
 
     if (hd->cap < new_len) {
         size_t new_cap = tmp->cap * 2;
         if (new_cap < new_len) new_cap = new_len;
+        if (hint_cap > new_cap) new_cap = hint_cap;
 
         tmp = realloc(hd, sizeof(dstrhd) + new_cap);
         if (!tmp) return NULL;
@@ -208,9 +210,7 @@ static inline char* _dstr_cat_append_helper(dstrhd* hd, const char* s, size_t s_
     }
 
     memcpy(tmp->buf + tmp->len - 1, s, s_len);
-
     tmp->len = new_len;
-
     return tmp->buf;
 }
 
@@ -221,7 +221,7 @@ static dstr dstrcat_base(dstr s, const char* cs)
     size_t cs_len = strlen(cs);
     size_t new_len = hd->len + cs_len - 1;
 
-    return _dstr_cat_append_helper(hd, cs, cs_len, new_len);
+    return _dstr_cat_append_helper(hd, cs, cs_len, new_len, 0);
 }
 
 static dstr dstrcat_custom(dstr s, const char* cs, size_t cap)
@@ -230,12 +230,7 @@ static dstr dstrcat_custom(dstr s, const char* cs, size_t cap)
     size_t cs_len = strlen(cs);
     size_t new_len = hd->len + cs_len - 1;
 
-    if (hd->cap < new_len) {
-        if (cap < new_len) cap = new_len;
-        hd->cap = cap;
-    }
-
-    return _dstr_cat_append_helper(hd, cs, cs_len, new_len);
+    return _dstr_cat_append_helper(hd, cs, cs_len, new_len, cap);
 }
 
 // strappend
@@ -245,7 +240,7 @@ static dstr dstrappend_base(dstr s, const dstr cs)
     dstrhd* chd = dstrfull(cs);
     size_t new_len = hd->len + chd->len - 1;
 
-    return _dstr_cat_append_helper(hd, chd->buf, chd->len, new_len);
+    return _dstr_cat_append_helper(hd, chd->buf, chd->len, new_len, 0);
 }
 
 static dstr dstrappend_custom(dstr s, const dstr cs, size_t cap)
@@ -254,12 +249,7 @@ static dstr dstrappend_custom(dstr s, const dstr cs, size_t cap)
     dstrhd* chd = dstrfull(cs);
     size_t new_len = hd->len + chd->len - 1;
 
-    if (hd->cap < new_len) {
-        if (cap < new_len) cap = new_len;
-        hd->cap = cap;
-    }
-
-    return _dstr_cat_append_helper(hd, chd->buf, chd->len, new_len);
+    return _dstr_cat_append_helper(hd, chd->buf, chd->len, new_len, cap);
 }
 
 // strnew
