@@ -15,7 +15,6 @@
 #error "DynamicStringLibrary supports only common architectures: x86, x86-64, ARM, ARM64"
 #endif
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
@@ -74,24 +73,24 @@ typedef char* dstr;
 
 // Functions
 static inline struct dstrhd* dstrfull(dstr s) 
-    __attribute__((pure, warn_unused_result, always_inline));
+    __attribute__((warn_unused_result, always_inline));
 
 static inline size_t dstrlen_str(dstr s)
-    __attribute__((pure, nonnull(1)));
+    __attribute__((pure, nonnull(1), warn_unused_result));
 static inline size_t dstrlen_dstrhd(struct dstrhd s)
-    __attribute__((pure));
+    __attribute__((pure, warn_unused_result));
 static inline size_t dstrlen_dstrhdp(struct dstrhd* s)
-    __attribute__((pure, nonnull(1)));
+    __attribute__((pure, nonnull(1), warn_unused_result));
 
 static inline dstr dstrdup_str(dstr s)
-    __attribute__((nonnull(1), malloc, warn_unused_result));
+    __attribute__((nonnull(1), warn_unused_result));
 static inline dstr dstrdup_dstrhd(struct dstrhd s)
-    __attribute__((malloc, warn_unused_result));
+    __attribute__((warn_unused_result));
 static inline dstr dstrdup_dstrhdp(struct dstrhd* s)
-    __attribute__((nonnull(1), malloc, warn_unused_result));
+    __attribute__((nonnull(1), warn_unused_result));
 
 static inline void dstrclear_str(dstr s)
-    __attribute__((nonnull(1), always_inline));
+    __attribute__((always_inline, nonnull(1)));
 static void dstrclear_dstrhdp(struct dstrhd* s)
     __attribute__((nonnull(1)));
 
@@ -101,11 +100,11 @@ static dstrhd* dstrresize_dstrhdp(dstrhd* s, size_t cap)
     __attribute__((nonnull(1), warn_unused_result ));
 
 static inline _Bool dstrcmp_str_hd(dstr s1, dstrhd* h2)
-    __attribute__((pure, nonnull(1,2), warn_unused_result, always_inline));
+    __attribute__((always_inline, nonnull(1,2), warn_unused_result));
 static inline _Bool dstrcmp_hd_str(dstrhd* h1, dstr s2)
-    __attribute__((pure, nonnull(1,2), warn_unused_result, always_inline));
+    __attribute__((always_inline, nonnull(1,2), warn_unused_result));
 static inline _Bool dstrcmp_str_str(dstr s1, dstr s2)
-    __attribute__((pure, nonnull(1,2), warn_unused_result, always_inline));
+    __attribute__((always_inline, nonnull(1,2), warn_unused_result));
 static _Bool dstrcmp_hd_hd(dstrhd* h1, dstrhd* h2)
     __attribute__((pure, nonnull(1,2), warn_unused_result));
 
@@ -120,9 +119,9 @@ static dstr dstrappend_custom(dstr s, const dstr cs, size_t cap)
     __attribute__((nonnull(1,2), warn_unused_result));
 
 static dstr dstrnew_base(const char* msg)
-    __attribute__((nonnull(1), malloc, warn_unused_result));
+    __attribute__((nonnull(1), warn_unused_result));
 static dstr dstrnew_custom(const char* msg, size_t cap)
-    __attribute__((nonnull(1), malloc, warn_unused_result));
+    __attribute__((nonnull(1), warn_unused_result));
 
 static void dstrfree(dstr s)
     __attribute__((nonnull(1)));
