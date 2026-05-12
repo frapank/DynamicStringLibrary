@@ -6,6 +6,9 @@
 #ifndef DSTR_H
 #define DSTR_H
 
+#if !defined(__GNUC__) && !defined(__clang__)
+#error "Unsupported compiler, DynamicStringLibrary supports only gcc and clang"
+#endif
 #if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
 #error "DynamicStringLibrary supporto only C11+ versions"
 #endif
