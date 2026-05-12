@@ -161,6 +161,7 @@ static dstr dstrresize_str(dstr s, size_t cap)
     if(!tmp)
         return NULL;
 
+    memset(tmp->buf + tmp->len, 0, cap - tmp->cap);
     tmp->cap = cap;
     return tmp->buf;
 }
@@ -174,6 +175,7 @@ static dstrhd* dstrresize_dstrhdp(dstrhd* s, size_t cap)
     if(!tmp)
         return NULL;
 
+    memset(tmp->buf + tmp->len, 0, cap - tmp->cap);
     tmp->cap = cap;
     return tmp;
 }
