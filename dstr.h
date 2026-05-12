@@ -111,9 +111,9 @@ static dstr dstrappend_custom(dstr s, const dstr cs, size_t cap)
     __attribute__((nonnull(1,2), warn_unused_result));
 
 static dstr dstrnew_base(const char* msg)
-    __attribute__((nonnull(1), malloc, warn_unused_result, returns_nonnull));
+    __attribute__((nonnull(1), malloc, warn_unused_result));
 static dstr dstrnew_custom(const char* msg, size_t cap)
-    __attribute__((nonnull(1), malloc, warn_unused_result, returns_nonnull));
+    __attribute__((nonnull(1), malloc, warn_unused_result));
 
 static void dstrfree(dstr s)
     __attribute__((nonnull(1)));
@@ -122,25 +122,25 @@ static void dstrfree(dstr s)
 #ifdef DSTR_IMPLEMENTATION
 
 // strlen
-static inline size_t dstrlen_str(dstr s){return dstrfull(s)->len-1;};
-static inline size_t dstrlen_dstrhd(struct dstrhd s) {return s.len-1;};
-static inline size_t dstrlen_dstrhdp(struct dstrhd* s) {return s->len-1;};
+static inline size_t dstrlen_str(dstr s){return dstrfull(s)->len;};
+static inline size_t dstrlen_dstrhd(struct dstrhd s) {return s.len;};
+static inline size_t dstrlen_dstrhdp(struct dstrhd* s) {return s->len;};
 
 // strdup
 static inline dstr dstrdup_str(dstr s) {
     dstrhd* hd = dstrfull(s);
-    return dstrnew_custom(hd->buf, hd->cap);
+    return dstrnew_custom(hd->buf, hd->cap-1);
 }
-static inline dstr dstrdup_dstrhd(dstrhd s) {return dstrnew_custom(s.buf, s.cap);}
-static inline dstr dstrdup_dstrhdp(dstrhdp s) {return dstrnew_custom(s->buf, s->cap);}
+static inline dstr dstrdup_dstrhd(dstrhd s) {return dstrnew_custom(s.buf, s.cap-1);}
+static inline dstr dstrdup_dstrhdp(dstrhdp s) {return dstrnew_custom(s->buf, s->cap-1);}
 
 // strclear
 static inline void dstrclear_str(dstr s) {dstrclear_dstrhdp(dstrfull(s));}
 static void dstrclear_dstrhdp(struct dstrhd* s)
 {
-    if(!s || s->len <= 1) return;
+    if(!s || s->len <= 0) return;
     memset(s->buf, 0, s->cap);
-    s->len = 1;
+    s->len = 0;
 }
 
 // strfull
@@ -161,8 +161,9 @@ static dstr dstrresize_str(dstr s, size_t cap)
     if(!tmp)
         return NULL;
 
-    memset(tmp->buf + tmp->len, 0, cap - tmp->cap);
+    size_t old_cap = tmp->cap;
     tmp->cap = cap;
+    memset(tmp->buf + old_cap, 0, cap - old_cap);
     return tmp->buf;
 }
 
@@ -175,8 +176,9 @@ static dstrhd* dstrresize_dstrhdp(dstrhd* s, size_t cap)
     if(!tmp)
         return NULL;
 
-    memset(tmp->buf + tmp->len, 0, cap - tmp->cap);
+    size_t old_cap = tmp->cap;
     tmp->cap = cap;
+    memset(tmp->buf + old_cap, 0, cap - old_cap);
     return tmp;
 }
 
@@ -190,7 +192,7 @@ static _Bool dstrcmp_hd_hd(dstrhd* h1, dstrhd* h2)
     if(h1->len != h2->len) 
         return 0;
 
-    return memcmp(h1->buf, h2->buf, h1->len - 1) == 0;
+    return memcmp(h1->buf, h2->buf, h1->len) == 0;
 }
 
 // strcat & strappend helper
@@ -200,9 +202,9 @@ static inline char* _dstr_cat_append_helper(dstrhd* hd, const char* s,
 {
     dstrhd* tmp = hd;
 
-    if (hd->cap < new_len) {
+    if (hd->cap < new_len+1) {
         size_t new_cap = tmp->cap * 2;
-        if (new_cap < new_len) new_cap = new_len;
+        if (new_cap < new_len+1) new_cap = new_len+1;
         if (hint_cap > new_cap) new_cap = hint_cap;
 
         tmp = realloc(hd, sizeof(dstrhd) + new_cap);
@@ -211,7 +213,8 @@ static inline char* _dstr_cat_append_helper(dstrhd* hd, const char* s,
         tmp->cap = new_cap;
     }
 
-    memcpy(tmp->buf + tmp->len - 1, s, s_len);
+    memcpy(tmp->buf + tmp->len, s, s_len);
+    tmp->buf[new_len] = '\0';
     tmp->len = new_len;
     return tmp->buf;
 }
@@ -221,7 +224,7 @@ static dstr dstrcat_base(dstr s, const char* cs)
 {
     dstrhd* hd = dstrfull(s);
     size_t cs_len = strlen(cs);
-    size_t new_len = hd->len + cs_len - 1;
+    size_t new_len = hd->len + cs_len;
 
     return _dstr_cat_append_helper(hd, cs, cs_len, new_len, 0);
 }
@@ -230,7 +233,7 @@ static dstr dstrcat_custom(dstr s, const char* cs, size_t cap)
 {
     dstrhd* hd = dstrfull(s);
     size_t cs_len = strlen(cs);
-    size_t new_len = hd->len + cs_len - 1;
+    size_t new_len = hd->len + cs_len;
 
     return _dstr_cat_append_helper(hd, cs, cs_len, new_len, cap);
 }
@@ -240,7 +243,7 @@ static dstr dstrappend_base(dstr s, const dstr cs)
 {
     dstrhd* hd = dstrfull(s);
     dstrhd* chd = dstrfull(cs);
-    size_t new_len = hd->len + chd->len - 1;
+    size_t new_len = hd->len + chd->len;
 
     return _dstr_cat_append_helper(hd, chd->buf, chd->len, new_len, 0);
 }
@@ -249,7 +252,7 @@ static dstr dstrappend_custom(dstr s, const dstr cs, size_t cap)
 {
     dstrhd* hd = dstrfull(s);
     dstrhd* chd = dstrfull(cs);
-    size_t new_len = hd->len + chd->len - 1;
+    size_t new_len = hd->len + chd->len;
 
     return _dstr_cat_append_helper(hd, chd->buf, chd->len, new_len, cap);
 }
@@ -257,44 +260,36 @@ static dstr dstrappend_custom(dstr s, const dstr cs, size_t cap)
 // strnew
 static dstr dstrnew_base(const char* msg)
 {
-    size_t s_len = strlen(msg) + 1;
-    size_t alloc_size = s_len;
+    size_t s_len = strlen(msg);
+    size_t alloc_size = s_len+1;
 
-    if(s_len < DSTR_MIN_ALLOC_CAP) 
+    if(alloc_size < DSTR_MIN_ALLOC_CAP) 
         alloc_size = DSTR_MIN_ALLOC_CAP;
 
     struct dstrhd* hd = malloc((sizeof(struct dstrhd)) + (alloc_size));
-    if(!hd)
-        return NULL;
+    if(!hd) return NULL;
 
     hd->cap = alloc_size;
     hd->len = s_len;
-    dstr s_ret = hd->buf;
-
-    memcpy(s_ret, msg, s_len);
-    
-    return s_ret;
+    memcpy(hd->buf, msg, s_len+1);
+    return hd->buf;
 }
 
 static dstr dstrnew_custom(const char* msg, size_t cap)
 {
-    size_t s_len = strlen(msg) + 1;
-    size_t alloc_size = cap;
+    size_t s_len = strlen(msg);
+    size_t alloc_size = cap+1;
 
     if(s_len > cap) 
-        alloc_size = s_len;
+        alloc_size = s_len+1;
 
     struct dstrhd* hd = malloc((sizeof(struct dstrhd)) + (alloc_size));
-    if(!hd)
-        return NULL;
+    if(!hd) return NULL;
 
     hd->cap = alloc_size;
     hd->len = s_len;
-    dstr s_ret = hd->buf;
-
-    memcpy(s_ret, msg, s_len);
-
-    return s_ret;
+    memcpy(hd->buf, msg, s_len+1);
+    return hd->buf;
 }
 
 // strfree
