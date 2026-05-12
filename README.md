@@ -176,11 +176,16 @@ The `dstr` pointer refers directly to the buffer, while metadata (length and cap
 * Capacity arguments are hints and never override minimum required size.
 * Memory ownership is handled entirely by the library.
 
-## TODO
+## ROADMAP
 
-* dstrinsert: insert substring at position
-* dstrfind: search character
-* dstrpush: append single character
+* **dstrhd:** Implement dstrhd8/16/32/64 — Add fixed-width header variants to reduce overhead and improve memory packing and alignment
+* **dstrinsert:** Insert substring at position — Insert a byte sequence at a given index, shifting data and updating len/alloc safely.
+* **dstrfind:** Search character — Find first (or last) occurrence of a character/substring and return index or -1.
+* **dstrpush:** Append single character — Append one byte to the end, growing the buffer using amortized growth.
+* **dstrtrim:** Trim characters — Remove leading/trailing whitespace or a specified set of chars, adjusting len without realloc when possible.
+* **dstrrange:** Extract range — Keep or return a substring defined by start and end indices (supports negative indices).
+* **dstrsplit:** Split string — Tokenize by a delimiter into an array/list of dynamic strings, reusing buffers when feasible.
+* **dstrtolower / dstrtoupper:** Case conversion — Convert ASCII characters to lower/upper case in-place.
 
 ## License
 
