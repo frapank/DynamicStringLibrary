@@ -147,7 +147,7 @@ static inline dstr dstrdup_dstrhdp(dstrhdp s) {return dstrnew_custom(s->buf, s->
 static inline void dstrclear_str(dstr s) {dstrclear_dstrhdp(dstrfull(s));}
 static void dstrclear_dstrhdp(struct dstrhd* s)
 {
-    if(!s || s->len <= 0) return;
+    if(!s || s->len == 0) return;
     memset(s->buf, 0, s->cap);
     s->len = 0;
 }
