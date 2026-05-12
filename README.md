@@ -178,7 +178,6 @@ The `dstr` pointer refers directly to the buffer, while metadata (length and cap
 
 ## ROADMAP
 
-* **dstrhd:** Implement dstrhd8/16/32/64 — Add fixed-width header variants to reduce overhead and improve memory packing and alignment
 * **dstrinsert:** Insert substring at position — Insert a byte sequence at a given index, shifting data and updating len/alloc safely.
 * **dstrfind:** Search character — Find first (or last) occurrence of a character/substring and return index or -1.
 * **dstrpush:** Append single character — Append one byte to the end, growing the buffer using amortized growth.
