@@ -132,6 +132,17 @@ static void dstrfree(dstr s)
 /* Implementation */
 #ifdef DSTR_IMPLEMENTATION
 
+// Shortcut
+#ifdef DSTR_SHORTCUT
+#   define GET_DOLLAR(_1,_2,NAME,...) NAME
+#   define $(...) \
+       GET_DOLLAR(__VA_ARGS__, $_custom, $_base)(__VA_ARGS__)
+#   define $_base(str) \
+       dstrnew_base(str)
+#   define $_custom(str, cap) \
+       dstrnew_custom(str, cap)
+#endif
+
 // strlen
 static inline size_t dstrlen_str(dstr s){return dstrfull(s)->len;};
 static inline size_t dstrlen_dstrhd(struct dstrhd s) {return s.len;};
