@@ -143,6 +143,14 @@ static void dstrfree(dstr s)
        dstrnew_custom(str, cap)
 #endif
 
+// Autofree
+#define dstrauto \
+    __attribute__((cleanup(_dstr_autofree))) dstr
+static inline void _dstr_autofree(dstr* s)
+{
+    if (*s) dstrfree(*s);
+}
+
 // strlen
 static inline size_t dstrlen_str(dstr s){return dstrfull(s)->len;};
 static inline size_t dstrlen_dstrhd(struct dstrhd s) {return s.len;};
