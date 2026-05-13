@@ -25,33 +25,6 @@
 /* Public */
 #define DSTR_MIN_ALLOC_CAP 10
 
-#define dstrlen(x) _Generic((x), \
-    dstr: dstrlen_str, \
-    dstrhd: dstrlen_dstrhd, \
-    dstrhdp: dstrlen_dstrhdp \
-)(x)
-
-#define dstrdup(x) _Generic((x), \
-    dstr: dstrdup_str, \
-    dstrhd: dstrdup_dstrhd, \
-    dstrhdp: dstrdup_dstrhdp \
-)(x)
-
-#define dstrclear(x) _Generic((x), \
-    dstr: dstrclear_str, \
-    dstrhdp: dstrclear_dstrhdp \
-)(x)
-
-#define dstrreserve(x, cap) _Generic((x), \
-    dstr: dstrreserve_str, \
-    dstrhd*: dstrreserve_dstrhdp \
-)(x, cap)
-
-#define dstrcmp(x, y) _Generic((x), \
-    dstrhd*: _Generic((y), dstrhd*: dstrcmp_hd_hd, dstr: dstrcmp_hd_str), \
-    dstr: _Generic((y), dstrhd*: dstrcmp_str_hd, dstr: dstrcmp_str_str) \
-)(x, y)
-
 #define GET_DSTRNEW(_1, _2, NAME, ...) NAME
 #define dstrnew(...) \
     GET_DSTRNEW(__VA_ARGS__, dstrnew_custom, dstrnew_base)(__VA_ARGS__)
@@ -64,52 +37,30 @@
 #define dstrappend(...) \
     GET_DSTRAPPEND(__VA_ARGS__, dstrappend_custom, dstrappend_base)(__VA_ARGS__)
 
-struct dstrhd {
-    size_t len;
-    size_t cap;
-    char buf[];
-};
+struct dstrhd;
 
 typedef struct dstrhd dstrhd;
-typedef struct dstrhd* dstrhdp;
 typedef char* dstr;
 
 // Functions
 static inline struct dstrhd* dstrfull(dstr s) 
     __attribute__((warn_unused_result, always_inline));
 
-static inline size_t dstrlen_str(dstr s)
-    __attribute__((pure, nonnull(1), warn_unused_result));
-static inline size_t dstrlen_dstrhd(struct dstrhd s)
-    __attribute__((pure, warn_unused_result));
-static inline size_t dstrlen_dstrhdp(struct dstrhd* s)
+static inline size_t dstrlen(dstr s)
     __attribute__((pure, nonnull(1), warn_unused_result));
 
-static inline dstr dstrdup_str(dstr s)
-    __attribute__((nonnull(1), warn_unused_result));
-static inline dstr dstrdup_dstrhd(struct dstrhd s)
-    __attribute__((warn_unused_result));
-static inline dstr dstrdup_dstrhdp(struct dstrhd* s)
+static inline dstr dstrdup(dstr s)
     __attribute__((nonnull(1), warn_unused_result));
 
-static inline void dstrclear_str(dstr s)
+static inline void dstrclear(dstr s)
     __attribute__((always_inline, nonnull(1)));
-static void dstrclear_dstrhdp(struct dstrhd* s)
-    __attribute__((nonnull(1)));
 
-static dstr dstrreserve_str(dstr s, size_t cap)
+static dstr dstrreserve(dstr s, size_t cap)
     __attribute__((nonnull(1), warn_unused_result));
-static dstrhd* dstrreserve_dstrhdp(dstrhd* s, size_t cap)
-    __attribute__((nonnull(1), warn_unused_result ));
 
-static inline _Bool dstrcmp_str_hd(dstr s1, dstrhd* h2)
+static inline _Bool dstrcmp(dstr s1, dstr s2)
     __attribute__((always_inline, nonnull(1,2), warn_unused_result));
-static inline _Bool dstrcmp_hd_str(dstrhd* h1, dstr s2)
-    __attribute__((always_inline, nonnull(1,2), warn_unused_result));
-static inline _Bool dstrcmp_str_str(dstr s1, dstr s2)
-    __attribute__((always_inline, nonnull(1,2), warn_unused_result));
-static _Bool dstrcmp_hd_hd(dstrhd* h1, dstrhd* h2)
-    __attribute__((pure, nonnull(1,2), warn_unused_result));
+
 
 static dstr dstrcat_base(dstr s, const char* cs)
     __attribute__((nonnull(1,2), warn_unused_result));
@@ -121,6 +72,7 @@ static dstr dstrappend_base(dstr s, const dstr cs)
 static dstr dstrappend_custom(dstr s, const dstr cs, size_t cap)
     __attribute__((nonnull(1,2), warn_unused_result));
 
+
 static dstr dstrnew_base(const char* msg)
     __attribute__((nonnull(1), warn_unused_result));
 static dstr dstrnew_custom(const char* msg, size_t cap)
@@ -131,6 +83,12 @@ static void dstrfree(dstr s)
 
 /* Implementation */
 #ifdef DSTR_IMPLEMENTATION
+
+struct dstrhd {
+    size_t len;
+    size_t cap;
+    char buf[];
+};
 
 // Shortcut
 #ifdef DSTR_SHORTCUT
@@ -144,33 +102,32 @@ static void dstrfree(dstr s)
 #endif
 
 // Autofree
-#define dstrauto \
-    __attribute__((cleanup(_dstr_autofree))) dstr
+#define dstrauto __attribute__((cleanup(_dstr_autofree))) dstr
+
 static inline void _dstr_autofree(dstr* s)
 {
     if (*s) dstrfree(*s);
 }
 
 // strlen
-static inline size_t dstrlen_str(dstr s){return dstrfull(s)->len;};
-static inline size_t dstrlen_dstrhd(struct dstrhd s) {return s.len;};
-static inline size_t dstrlen_dstrhdp(struct dstrhd* s) {return s->len;};
+static inline size_t dstrlen(dstr s)
+{
+    return dstrfull(s)->len;
+};
 
 // strdup
-static inline dstr dstrdup_str(dstr s) {
+static inline dstr dstrdup(dstr s) {
     dstrhd* hd = dstrfull(s);
     return dstrnew_custom(hd->buf, hd->cap-1);
 }
-static inline dstr dstrdup_dstrhd(dstrhd s) {return dstrnew_custom(s.buf, s.cap-1);}
-static inline dstr dstrdup_dstrhdp(dstrhdp s) {return dstrnew_custom(s->buf, s->cap-1);}
 
 // strclear
-static inline void dstrclear_str(dstr s) {dstrclear_dstrhdp(dstrfull(s));}
-static void dstrclear_dstrhdp(struct dstrhd* s)
+static void dstrclear(dstr s)
 {
-    if(s->len == 0) return;
-    memset(s->buf, 0, s->cap);
-    s->len = 0;
+    dstrhd* hd = dstrfull(s);
+    if(hd->len == 0) return;
+    memset(hd->buf, 0, hd->cap);
+    hd->len = 0;
 }
 
 // strfull
@@ -180,7 +137,7 @@ static inline struct dstrhd* dstrfull(dstr s)
 };
 
 // strresize
-static dstr dstrreserve_str(dstr s, size_t cap)
+static dstr dstrreserve(dstr s, size_t cap)
 {
     dstrhd* hd = dstrfull(s);
 
@@ -197,36 +154,19 @@ static dstr dstrreserve_str(dstr s, size_t cap)
     return tmp->buf;
 }
 
-static dstrhd* dstrreserve_dstrhdp(dstrhd* s, size_t cap)
-{
-    if(s->cap >= cap)
-        return s;
-
-    dstrhd* tmp = realloc(s, sizeof(dstrhd) + cap);
-    if(!tmp)
-        return NULL;
-
-    size_t old_cap = tmp->cap;
-    tmp->cap = cap;
-    memset(tmp->buf + old_cap, 0, cap - old_cap);
-    return tmp;
-}
-
 // strcmp
-static inline _Bool dstrcmp_str_hd(dstr s1, dstrhd* h2) {return dstrcmp_hd_hd(dstrfull(s1), h2);}
-static inline _Bool dstrcmp_hd_str(dstrhd* h1, dstr s2) {return dstrcmp_hd_hd(h1, dstrfull(s2));}
-static inline _Bool dstrcmp_str_str(dstr s1, dstr s2) {return dstrcmp_hd_hd(dstrfull(s1), dstrfull(s2));}
-
-static _Bool dstrcmp_hd_hd(dstrhd* h1, dstrhd* h2)
+static inline _Bool dstrcmp(dstr s1, dstr s2)
 {
-    if(h1->len != h2->len) 
+    dstrhd* hd1 = dstrfull(s1);
+    dstrhd* hd2 = dstrfull(s2);
+
+    if(hd1->len != hd2->len) 
         return 0;
 
-    return memcmp(h1->buf, h2->buf, h1->len) == 0;
+    return memcmp(hd1->buf, hd2->buf, hd1->len) == 0;
 }
 
 // strcat & strappend helper
-__attribute__((always_inline))
 static inline char* _dstr_cat_append_helper(dstrhd* hd, const char* s, 
         size_t s_len, size_t new_len, size_t hint_cap)
 {
