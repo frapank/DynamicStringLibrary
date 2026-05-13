@@ -308,7 +308,7 @@ static dstr dstrnew_base(const char* msg)
 static dstr dstrnew_custom(const char* msg, size_t cap)
 {
     size_t s_len = strlen(msg);
-    size_t alloc_size = cap+1;
+    size_t alloc_size = cap;
 
     if(s_len > cap) 
         alloc_size = s_len+1;
