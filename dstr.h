@@ -42,9 +42,9 @@
     dstrhdp: dstrclear_dstrhdp \
 )(x)
 
-#define dstrresize(x, cap) _Generic((x), \
-    dstr: dstrresize_str, \
-    dstrhd*: dstrresize_dstrhdp \
+#define dstrreserve(x, cap) _Generic((x), \
+    dstr: dstrreserve_str, \
+    dstrhd*: dstrreserve_dstrhdp \
 )(x, cap)
 
 #define dstrcmp(x, y) _Generic((x), \
@@ -97,9 +97,9 @@ static inline void dstrclear_str(dstr s)
 static void dstrclear_dstrhdp(struct dstrhd* s)
     __attribute__((nonnull(1)));
 
-static dstr dstrresize_str(dstr s, size_t cap)
+static dstr dstrreserve_str(dstr s, size_t cap)
     __attribute__((nonnull(1), warn_unused_result));
-static dstrhd* dstrresize_dstrhdp(dstrhd* s, size_t cap)
+static dstrhd* dstrreserve_dstrhdp(dstrhd* s, size_t cap)
     __attribute__((nonnull(1), warn_unused_result ));
 
 static inline _Bool dstrcmp_str_hd(dstr s1, dstrhd* h2)
@@ -180,7 +180,7 @@ static inline struct dstrhd* dstrfull(dstr s)
 };
 
 // strresize
-static dstr dstrresize_str(dstr s, size_t cap)
+static dstr dstrreserve_str(dstr s, size_t cap)
 {
     dstrhd* hd = dstrfull(s);
 
@@ -197,7 +197,7 @@ static dstr dstrresize_str(dstr s, size_t cap)
     return tmp->buf;
 }
 
-static dstrhd* dstrresize_dstrhdp(dstrhd* s, size_t cap)
+static dstrhd* dstrreserve_dstrhdp(dstrhd* s, size_t cap)
 {
     if(s->cap >= cap)
         return s;
