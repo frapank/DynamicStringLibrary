@@ -36,53 +36,37 @@
 #define dstrappend(...) \
     GET_DSTRAPPEND(__VA_ARGS__, dstrappend_custom, dstrappend_base)(__VA_ARGS__)
 
+#define NONNULL(...) \
+    __attribute__((nonnull(__VA_ARGS__)))
+
+#define W_UNUSED_RESULT \
+    __attribute__((warn_unused_result))
+
 typedef char* dstr;
 
 // Functions
 #ifdef DSTR_SHORTCUT
-inline void _dstr_autofree(dstr* s)
-    __attribute__((nonnull(1)));
+    inline void _dstr_autofree(dstr* s) NONNULL(1);
 #endif
 
+size_t dstrlen(dstr s) NONNULL(1) W_UNUSED_RESULT;
+size_t dstrcap(dstr s) NONNULL(1) W_UNUSED_RESULT;
 
-size_t dstrlen(dstr s)
-    __attribute__((pure, nonnull(1), warn_unused_result));
+//inline dstr dstrdup(dstr s) NONNULL(1) W_UNUSED_RESULT;
+//inline void dstrclear(dstr s) NONNULL(1);
+//inline _Bool dstrcmp(dstr s1, dstr s2) NONNULL(1,2) W_UNUSED_RESULT;
+//dstr dstrreserve(dstr s, size_t cap) NONNULL(1) W_UNUSED_RESULT;
 
-size_t dstrcap(dstr s)
-    __attribute__((pure, nonnull(1), warn_unused_result));
+//dstr dstrcat_base(dstr s, const char* cs) NONNULL(1,2) W_UNUSED_RESULT;
+//dstr dstrcat_custom(dstr s, const char* cs, size_t cap) NONNULL(1,2) W_UNUSED_RESULT;
 
+//dstr dstrappend_base(dstr s, const dstr cs) NONNULL(1,2) W_UNUSED_RESULT;
+//dstr dstrappend_custom(dstr s, const dstr cs, size_t cap) NONNULL(1,2) W_UNUSED_RESULT;
 
-//inline dstr dstrdup(dstr s)
-//    __attribute__((nonnull(1), warn_unused_result));
-//
-//inline void dstrclear(dstr s)
-//    __attribute__((always_inline, nonnull(1)));
-//
-//dstr dstrreserve(dstr s, size_t cap)
-//    __attribute__((nonnull(1), warn_unused_result));
-//
-//inline _Bool dstrcmp(dstr s1, dstr s2)
-//    __attribute__((always_inline, nonnull(1,2), warn_unused_result));
-//
-//
-//dstr dstrcat_base(dstr s, const char* cs)
-//    __attribute__((nonnull(1,2), warn_unused_result));
-//dstr dstrcat_custom(dstr s, const char* cs, size_t cap)
-//    __attribute__((nonnull(1,2), warn_unused_result));
-//
-//dstr dstrappend_base(dstr s, const dstr cs)
-//    __attribute__((nonnull(1,2), warn_unused_result));
-//dstr dstrappend_custom(dstr s, const dstr cs, size_t cap)
-//    __attribute__((nonnull(1,2), warn_unused_result));
+dstr dstrnew_base(const char* msg) NONNULL(1) W_UNUSED_RESULT;
+dstr dstrnew_custom(const char* msg, size_t cap) NONNULL(1) W_UNUSED_RESULT;
 
-
-dstr dstrnew_base(const char* msg)
-    __attribute__((nonnull(1), warn_unused_result));
-dstr dstrnew_custom(const char* msg, size_t cap)
-    __attribute__((nonnull(1), warn_unused_result));
-
-void dstrfree(dstr s)
-    __attribute__((nonnull(1)));
+void dstrfree(dstr s) NONNULL(1);
 
 /* Implementation */
 #ifdef DSTR_IMPLEMENTATION
