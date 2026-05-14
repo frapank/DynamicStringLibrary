@@ -48,6 +48,10 @@ inline void _dstr_autofree(dstr* s)
 size_t dstrlen(dstr s)
     __attribute__((pure, nonnull(1), warn_unused_result));
 
+size_t dstrcap(dstr s)
+    __attribute__((pure, nonnull(1), warn_unused_result));
+
+
 //inline dstr dstrdup(dstr s)
 //    __attribute__((nonnull(1), warn_unused_result));
 //
@@ -119,6 +123,11 @@ struct __attribute__((packed)) dstrhd64 {
 };
 
 // Utils
+#define DSTRGETHDR(n,s) \
+    ((struct dstrhd##n *)((char*)(s) - sizeof(struct dstrhd##n)))
+#define DSTRGETTYPE(s) \
+    s[-1]
+
 static inline enum dstrhd_type _dstr_type_by_size(size_t cap) 
 {
     if (cap <= UINT8_MAX) return DSTRHD_TYPE_8;
@@ -127,8 +136,10 @@ static inline enum dstrhd_type _dstr_type_by_size(size_t cap)
     return DSTRHD_TYPE_64;
 }
 
-#define DSTRGETHDR(n,s) \
-    ((struct dstrhd##n *)((char*)(s) - sizeof(struct dstrhd##n)))
+static inline dstr _dstr_change_header(dstr s, enum dstrhd_type t)
+{
+          
+}
 
 // Shortcut
 #ifdef DSTR_SHORTCUT
@@ -150,9 +161,9 @@ void _dstr_autofree(dstr* s)
 }
 
 // strlen
-inline size_t dstrlen(dstr s)
+size_t dstrlen(dstr s)
 {
-    enum dstrhd_type t = s[-1];
+    enum dstrhd_type t = DSTRGETTYPE(s);
     switch(t) {
         case DSTRHD_TYPE_8: {
             return DSTRGETHDR(8, s)->len;
@@ -170,8 +181,29 @@ inline size_t dstrlen(dstr s)
     return 0;
 };
 
+// dstrcap
+size_t dstrcap(dstr s)
+{
+    enum dstrhd_type t = DSTRGETTYPE(s);
+    switch(t) {
+        case DSTRHD_TYPE_8: {
+            return DSTRGETHDR(8, s)->cap;
+        }
+        case DSTRHD_TYPE_16: {
+            return DSTRGETHDR(16, s)->cap;
+        }
+        case DSTRHD_TYPE_32: {
+            return DSTRGETHDR(32, s)->cap;
+        }
+        case DSTRHD_TYPE_64: {
+            return DSTRGETHDR(64, s)->cap;
+        }
+    }
+    return 0;
+}
+
 //// strdup
-//inline dstr dstrdup(dstr s) {
+//dstr dstrdup(dstr s) {
 //    //dstrhd* hd = dstrfull(s);
 //    return dstrnew_custom(hd->buf, hd->cap-1);
 //}
