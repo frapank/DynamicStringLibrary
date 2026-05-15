@@ -21,37 +21,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
+#include <stdint.h>
 
 /* Public */
-#define DSTR_MIN_ALLOC_CAP 10
-
-#define dstrlen(x) _Generic((x), \
-    dstr: dstrlen_str, \
-    dstrhd: dstrlen_dstrhd, \
-    dstrhdp: dstrlen_dstrhdp \
-)(x)
-
-#define dstrdup(x) _Generic((x), \
-    dstr: dstrdup_str, \
-    dstrhd: dstrdup_dstrhd, \
-    dstrhdp: dstrdup_dstrhdp \
-)(x)
-
-#define dstrclear(x) _Generic((x), \
-    dstr: dstrclear_str, \
-    dstrhdp: dstrclear_dstrhdp \
-)(x)
-
-#define dstrreserve(x, cap) _Generic((x), \
-    dstr: dstrreserve_str, \
-    dstrhd*: dstrreserve_dstrhdp \
-)(x, cap)
-
-#define dstrcmp(x, y) _Generic((x), \
-    dstrhd*: _Generic((y), dstrhd*: dstrcmp_hd_hd, dstr: dstrcmp_hd_str), \
-    dstr: _Generic((y), dstrhd*: dstrcmp_str_hd, dstr: dstrcmp_str_str) \
-)(x, y)
-
 #define GET_DSTRNEW(_1, _2, NAME, ...) NAME
 #define dstrnew(...) \
     GET_DSTRNEW(__VA_ARGS__, dstrnew_custom, dstrnew_base)(__VA_ARGS__)
@@ -64,73 +36,155 @@
 #define dstrappend(...) \
     GET_DSTRAPPEND(__VA_ARGS__, dstrappend_custom, dstrappend_base)(__VA_ARGS__)
 
-struct dstrhd {
-    size_t len;
-    size_t cap;
-    char buf[];
-};
+#define NONNULL(...) \
+    __attribute__((nonnull(__VA_ARGS__)))
 
-typedef struct dstrhd dstrhd;
-typedef struct dstrhd* dstrhdp;
+#define W_UNUSED_RESULT \
+    __attribute__((warn_unused_result))
+
 typedef char* dstr;
 
 // Functions
-static inline struct dstrhd* dstrfull(dstr s) 
-    __attribute__((warn_unused_result, always_inline));
+#ifdef DSTR_SHORTCUT
+    inline void _dstr_autofree(dstr* s) NONNULL(1);
+#endif
 
-static inline size_t dstrlen_str(dstr s)
-    __attribute__((pure, nonnull(1), warn_unused_result));
-static inline size_t dstrlen_dstrhd(struct dstrhd s)
-    __attribute__((pure, warn_unused_result));
-static inline size_t dstrlen_dstrhdp(struct dstrhd* s)
-    __attribute__((pure, nonnull(1), warn_unused_result));
+size_t dstrlen(dstr s) NONNULL(1) W_UNUSED_RESULT;
+size_t dstrcap(dstr s) NONNULL(1) W_UNUSED_RESULT;
 
-static inline dstr dstrdup_str(dstr s)
-    __attribute__((nonnull(1), warn_unused_result));
-static inline dstr dstrdup_dstrhd(struct dstrhd s)
-    __attribute__((warn_unused_result));
-static inline dstr dstrdup_dstrhdp(struct dstrhd* s)
-    __attribute__((nonnull(1), warn_unused_result));
+inline dstr dstrdup(dstr s) NONNULL(1) W_UNUSED_RESULT;
+inline void dstrclear(dstr s) NONNULL(1);
+inline _Bool dstrcmp(dstr s1, dstr s2) NONNULL(1,2) W_UNUSED_RESULT;
+dstr dstrreserve(dstr s, size_t new_cap) NONNULL(1) W_UNUSED_RESULT;
 
-static inline void dstrclear_str(dstr s)
-    __attribute__((always_inline, nonnull(1)));
-static void dstrclear_dstrhdp(struct dstrhd* s)
-    __attribute__((nonnull(1)));
+dstr dstrcat_base(dstr s1, const char* s2) NONNULL(1,2) W_UNUSED_RESULT;
+dstr dstrcat_custom(dstr s1, const char* s2, size_t cap) NONNULL(1,2) W_UNUSED_RESULT;
 
-static dstr dstrreserve_str(dstr s, size_t cap)
-    __attribute__((nonnull(1), warn_unused_result));
-static dstrhd* dstrreserve_dstrhdp(dstrhd* s, size_t cap)
-    __attribute__((nonnull(1), warn_unused_result ));
+dstr dstrappend_base(dstr s1, const dstr s2) NONNULL(1,2) W_UNUSED_RESULT;
+dstr dstrappend_custom(dstr s1, const dstr s2, size_t cap) NONNULL(1,2) W_UNUSED_RESULT;
 
-static inline _Bool dstrcmp_str_hd(dstr s1, dstrhd* h2)
-    __attribute__((always_inline, nonnull(1,2), warn_unused_result));
-static inline _Bool dstrcmp_hd_str(dstrhd* h1, dstr s2)
-    __attribute__((always_inline, nonnull(1,2), warn_unused_result));
-static inline _Bool dstrcmp_str_str(dstr s1, dstr s2)
-    __attribute__((always_inline, nonnull(1,2), warn_unused_result));
-static _Bool dstrcmp_hd_hd(dstrhd* h1, dstrhd* h2)
-    __attribute__((pure, nonnull(1,2), warn_unused_result));
+dstr dstrnew_base(const char* msg) NONNULL(1) W_UNUSED_RESULT;
+dstr dstrnew_custom(const char* msg, size_t cap) NONNULL(1) W_UNUSED_RESULT;
 
-static dstr dstrcat_base(dstr s, const char* cs)
-    __attribute__((nonnull(1,2), warn_unused_result));
-static dstr dstrcat_custom(dstr s, const char* cs, size_t cap)
-    __attribute__((nonnull(1,2), warn_unused_result));
-
-static dstr dstrappend_base(dstr s, const dstr cs)
-    __attribute__((nonnull(1,2), warn_unused_result));
-static dstr dstrappend_custom(dstr s, const dstr cs, size_t cap)
-    __attribute__((nonnull(1,2), warn_unused_result));
-
-static dstr dstrnew_base(const char* msg)
-    __attribute__((nonnull(1), warn_unused_result));
-static dstr dstrnew_custom(const char* msg, size_t cap)
-    __attribute__((nonnull(1), warn_unused_result));
-
-static void dstrfree(dstr s)
-    __attribute__((nonnull(1)));
+void dstrfree(dstr s) NONNULL(1);
 
 /* Implementation */
 #ifdef DSTR_IMPLEMENTATION
+
+enum dstrhd_type {
+    DSTRHD_TYPE_8 = 0,
+    DSTRHD_TYPE_16 = 1,
+    DSTRHD_TYPE_32 = 2,
+    DSTRHD_TYPE_64 = 3
+};
+
+struct __attribute__((packed)) dstrhd8 {
+    uint8_t len;
+    uint8_t cap; // 255
+    uint8_t type;
+    char buf[];
+};
+
+struct __attribute__((packed)) dstrhd16 {
+    uint16_t len;
+    uint16_t cap; // 65,535
+    uint8_t type;
+    char buf[];
+};
+
+struct __attribute__((packed)) dstrhd32 {
+    uint32_t len;
+    uint32_t cap; // 4,294,967,295
+    uint8_t type;
+    char buf[];
+};
+
+struct __attribute__((packed)) dstrhd64 {
+    uint64_t len;
+    uint64_t cap; // 18,446,744,073,709,551,615
+    uint8_t type;
+    char buf[];
+};
+
+// Utils
+#define DSTRGETHDR(n,s) \
+    ((struct dstrhd##n *)((char*)(s) - sizeof(struct dstrhd##n)))
+#define DSTRGETTYPE(s) ((uint8_t)((s)[-1]))
+#define DSTR_TODO \
+    do { \
+        fprintf(stderr, "dstr: function not implemented yet"); \
+        exit(1); \
+    } while (0)
+
+static inline enum dstrhd_type _dstr_type_by_size(size_t cap) 
+{
+    if (cap <= UINT8_MAX) return DSTRHD_TYPE_8;
+    if (cap <= UINT16_MAX) return DSTRHD_TYPE_16;
+    if (cap <= UINT32_MAX) return DSTRHD_TYPE_32;
+    return DSTRHD_TYPE_64;
+}
+
+static inline size_t _dstr_size_by_type(enum dstrhd_type type)
+{
+    switch(type) {
+        case DSTRHD_TYPE_8: 
+            return sizeof(struct dstrhd8);
+        case DSTRHD_TYPE_16: 
+            return sizeof(struct dstrhd16);
+        case DSTRHD_TYPE_32: 
+            return sizeof(struct dstrhd32);
+        case DSTRHD_TYPE_64: 
+            return sizeof(struct dstrhd64);
+        default:
+            return 0;
+    }
+}
+
+static inline void _dstr_set_len(void* hd,
+                                 size_t new_len,
+                                 enum dstrhd_type type)
+{
+    switch(type) {
+        case DSTRHD_TYPE_8:
+            ((struct dstrhd8*)hd)->len = (uint8_t)new_len;
+            return;
+
+        case DSTRHD_TYPE_16:
+            ((struct dstrhd16*)hd)->len = (uint16_t)new_len;
+            return;
+
+        case DSTRHD_TYPE_32:
+            ((struct dstrhd32*)hd)->len = (uint32_t)new_len;
+            return;
+
+        case DSTRHD_TYPE_64:
+            ((struct dstrhd64*)hd)->len = (uint64_t)new_len;
+            return;
+    }
+}
+
+static inline void _dstr_set_cap(void* hd,
+                                 size_t new_cap,
+                                 enum dstrhd_type type)
+{
+    switch(type) {
+        case DSTRHD_TYPE_8:
+            ((struct dstrhd8*)hd)->cap = (uint8_t)new_cap;
+            return;
+
+        case DSTRHD_TYPE_16:
+            ((struct dstrhd16*)hd)->cap = (uint16_t)new_cap;
+            return;
+
+        case DSTRHD_TYPE_32:
+            ((struct dstrhd32*)hd)->cap = (uint32_t)new_cap;
+            return;
+
+        case DSTRHD_TYPE_64:
+            ((struct dstrhd64*)hd)->cap = (uint64_t)new_cap;
+            return;
+    }
+}
 
 // Shortcut
 #ifdef DSTR_SHORTCUT
@@ -144,189 +198,320 @@ static void dstrfree(dstr s)
 #endif
 
 // Autofree
-#define dstrauto \
-    __attribute__((cleanup(_dstr_autofree))) dstr
-static inline void _dstr_autofree(dstr* s)
+#define dstrauto __attribute__((cleanup(_dstr_autofree))) dstr
+
+void _dstr_autofree(dstr* s)
 {
     if (*s) dstrfree(*s);
 }
 
 // strlen
-static inline size_t dstrlen_str(dstr s){return dstrfull(s)->len;};
-static inline size_t dstrlen_dstrhd(struct dstrhd s) {return s.len;};
-static inline size_t dstrlen_dstrhdp(struct dstrhd* s) {return s->len;};
-
-// strdup
-static inline dstr dstrdup_str(dstr s) {
-    dstrhd* hd = dstrfull(s);
-    return dstrnew_custom(hd->buf, hd->cap-1);
-}
-static inline dstr dstrdup_dstrhd(dstrhd s) {return dstrnew_custom(s.buf, s.cap-1);}
-static inline dstr dstrdup_dstrhdp(dstrhdp s) {return dstrnew_custom(s->buf, s->cap-1);}
-
-// strclear
-static inline void dstrclear_str(dstr s) {dstrclear_dstrhdp(dstrfull(s));}
-static void dstrclear_dstrhdp(struct dstrhd* s)
+size_t dstrlen(dstr s)
 {
-    if(s->len == 0) return;
-    memset(s->buf, 0, s->cap);
-    s->len = 0;
-}
-
-// strfull
-static inline struct dstrhd* dstrfull(dstr s) 
-{
-    return (struct dstrhd*)((char*)s - offsetof(struct dstrhd, buf));
+    enum dstrhd_type t = DSTRGETTYPE(s);
+    switch(t) {
+        case DSTRHD_TYPE_8: {
+            return DSTRGETHDR(8, s)->len;
+        }
+        case DSTRHD_TYPE_16: {
+            return DSTRGETHDR(16, s)->len;
+        }
+        case DSTRHD_TYPE_32: {
+            return DSTRGETHDR(32, s)->len;
+        }
+        case DSTRHD_TYPE_64: {
+            return DSTRGETHDR(64, s)->len;
+        }
+    }
+    return 0;
 };
 
-// strresize
-static dstr dstrreserve_str(dstr s, size_t cap)
+// dstrcap
+size_t dstrcap(dstr s)
 {
-    dstrhd* hd = dstrfull(s);
-
-    if(hd->cap >= cap)
-        return hd->buf;
-
-    dstrhd* tmp = realloc(hd, sizeof(dstrhd) + cap);
-    if(!tmp)
-        return NULL;
-
-    size_t old_cap = tmp->cap;
-    tmp->cap = cap;
-    memset(tmp->buf + old_cap, 0, cap - old_cap);
-    return tmp->buf;
+    enum dstrhd_type t = DSTRGETTYPE(s);
+    switch(t) {
+        case DSTRHD_TYPE_8: {
+            return DSTRGETHDR(8, s)->cap;
+        }
+        case DSTRHD_TYPE_16: {
+            return DSTRGETHDR(16, s)->cap;
+        }
+        case DSTRHD_TYPE_32: {
+            return DSTRGETHDR(32, s)->cap;
+        }
+        case DSTRHD_TYPE_64: {
+            return DSTRGETHDR(64, s)->cap;
+        }
+    }
+    return 0;
 }
 
-static dstrhd* dstrreserve_dstrhdp(dstrhd* s, size_t cap)
+// strdup
+dstr dstrdup(dstr s)
 {
-    if(s->cap >= cap)
+    if (!s) return NULL;
+
+    enum dstrhd_type t = DSTRGETTYPE(s);
+    size_t len = dstrlen(s);
+    size_t cap = dstrcap(s);
+
+    void* old_hd = NULL;
+    switch (t) {
+        case DSTRHD_TYPE_8:  old_hd = DSTRGETHDR(8, s);  break;
+        case DSTRHD_TYPE_16: old_hd = DSTRGETHDR(16, s); break;
+        case DSTRHD_TYPE_32: old_hd = DSTRGETHDR(32, s); break;
+        case DSTRHD_TYPE_64: old_hd = DSTRGETHDR(64, s); break;
+    }
+
+    if (!old_hd) return NULL;
+
+    size_t hd_size = _dstr_size_by_type(t);
+    void* new_hd = malloc(hd_size + cap);
+    if (!new_hd) return NULL;
+
+    _dstr_set_len(new_hd, len, t);
+    _dstr_set_cap(new_hd, cap, t);
+
+    *((uint8_t*)new_hd + hd_size - 1) = (uint8_t)t;
+
+    memcpy((char*)new_hd + hd_size, s, len + 1);
+
+    return (char*)new_hd + hd_size;
+}
+
+// strclear
+void dstrclear(dstr s)
+{
+    enum dstrhd_type t = DSTRGETTYPE(s);
+    void* hd = NULL;
+
+    switch(t) {
+        case DSTRHD_TYPE_8: hd = DSTRGETHDR(8, s); break;
+        case DSTRHD_TYPE_16: hd = DSTRGETHDR(16, s); break;
+        case DSTRHD_TYPE_32: hd = DSTRGETHDR(32, s); break;
+        case DSTRHD_TYPE_64: hd = DSTRGETHDR(64, s); break;
+    }
+
+    if (!hd) return;
+
+    _dstr_set_len(hd, 0, t);
+
+    size_t cap = dstrcap(s);
+    memset(s, 0, cap);
+}
+
+// strreserve
+dstr dstrreserve(dstr s, size_t new_cap)
+{
+    size_t s_len = dstrlen(s);
+
+    if (new_cap <= dstrcap(s))
         return s;
 
-    dstrhd* tmp = realloc(s, sizeof(dstrhd) + cap);
-    if(!tmp)
+    if (new_cap < s_len + 1)
+        new_cap = s_len + 1;
+
+    enum dstrhd_type old_type = DSTRGETTYPE(s);
+    enum dstrhd_type new_type = _dstr_type_by_size(new_cap);
+
+    size_t old_hd_size = _dstr_size_by_type(old_type);
+    size_t new_hd_size = _dstr_size_by_type(new_type);
+
+    void* old_hd = (char*)s - old_hd_size;
+
+    if(old_type == new_type) {
+        void* new_hd = realloc(old_hd, new_hd_size + new_cap);
+        if(!new_hd) 
+            return NULL;
+
+        s = (char*)new_hd + new_hd_size;
+
+        _dstr_set_len(new_hd, s_len, new_type);
+        _dstr_set_cap(new_hd, new_cap, new_type);
+
+        return s;
+    }  
+    
+    void* new_hd = malloc(new_hd_size + new_cap);
+    if (!new_hd) 
         return NULL;
 
-    size_t old_cap = tmp->cap;
-    tmp->cap = cap;
-    memset(tmp->buf + old_cap, 0, cap - old_cap);
-    return tmp;
+    _dstr_set_len(new_hd, s_len, new_type);
+    _dstr_set_cap(new_hd, new_cap, new_type);
+
+    *((char*)new_hd + new_hd_size-1) = (uint8_t)new_type;
+
+    char* new_buf = (char*)new_hd + new_hd_size;
+    memcpy(new_buf, s, s_len + 1);
+
+    free(old_hd);
+
+    return new_buf;
 }
 
 // strcmp
-static inline _Bool dstrcmp_str_hd(dstr s1, dstrhd* h2) {return dstrcmp_hd_hd(dstrfull(s1), h2);}
-static inline _Bool dstrcmp_hd_str(dstrhd* h1, dstr s2) {return dstrcmp_hd_hd(h1, dstrfull(s2));}
-static inline _Bool dstrcmp_str_str(dstr s1, dstr s2) {return dstrcmp_hd_hd(dstrfull(s1), dstrfull(s2));}
-
-static _Bool dstrcmp_hd_hd(dstrhd* h1, dstrhd* h2)
+inline _Bool dstrcmp(dstr s1, dstr s2)
 {
-    if(h1->len != h2->len) 
+    if (dstrlen(s1) != dstrlen(s2))
         return 0;
 
-    return memcmp(h1->buf, h2->buf, h1->len) == 0;
+    return memcmp(s1, s2, dstrlen(s1)) == 0;
 }
 
-// strcat & strappend helper
-__attribute__((always_inline))
-static inline char* _dstr_cat_append_helper(dstrhd* hd, const char* s, 
-        size_t s_len, size_t new_len, size_t hint_cap)
+// strcat & strappend
+static dstr _dstr_concat_impl(dstr s1, size_t s1_len,
+                               const char* s2, size_t s2_len,
+                               size_t cap)
 {
-    dstrhd* tmp = hd;
+    size_t new_len = s1_len + s2_len;
+    s1 = dstrreserve(s1, cap);
+    if (!s1) return NULL;
 
-    if (hd->cap < new_len+1) {
-        size_t new_cap = tmp->cap * 2;
-        if (new_cap < new_len+1) new_cap = new_len+1;
-        if (hint_cap > new_cap) new_cap = hint_cap;
-
-        tmp = realloc(hd, sizeof(dstrhd) + new_cap);
-        if (!tmp) return NULL;
-
-        tmp->cap = new_cap;
+    uint8_t hdr_type = DSTRGETTYPE(s1);
+    void* hd = NULL;
+    switch (hdr_type) {
+        case DSTRHD_TYPE_8:  hd = DSTRGETHDR(8,  s1); break;
+        case DSTRHD_TYPE_16: hd = DSTRGETHDR(16, s1); break;
+        case DSTRHD_TYPE_32: hd = DSTRGETHDR(32, s1); break;
+        case DSTRHD_TYPE_64: hd = DSTRGETHDR(64, s1); break;
     }
-
-    memcpy(tmp->buf + tmp->len, s, s_len);
-    tmp->buf[new_len] = '\0';
-    tmp->len = new_len;
-    return tmp->buf;
+    memcpy(s1 + s1_len, s2, s2_len);
+    s1[new_len] = '\0';
+    _dstr_set_len(hd, new_len, hdr_type);
+    return s1;
 }
 
 // strcat
-static dstr dstrcat_base(dstr s, const char* cs)
+dstr dstrcat_base(dstr s1, const char* s2)
 {
-    dstrhd* hd = dstrfull(s);
-    size_t cs_len = strlen(cs);
-    size_t new_len = hd->len + cs_len;
-
-    return _dstr_cat_append_helper(hd, cs, cs_len, new_len, 0);
+    if (!s1 || !s2) return s1;
+    size_t s1_len = dstrlen(s1);
+    size_t s2_len = strlen(s2);
+    return _dstr_concat_impl(s1, s1_len, s2, s2_len, s1_len + s2_len);
 }
 
-static dstr dstrcat_custom(dstr s, const char* cs, size_t cap)
+dstr dstrcat_custom(dstr s1, const char* s2, size_t cap)
 {
-    dstrhd* hd = dstrfull(s);
-    size_t cs_len = strlen(cs);
-    size_t new_len = hd->len + cs_len;
-
-    return _dstr_cat_append_helper(hd, cs, cs_len, new_len, cap);
+    if (!s1 || !s2) return s1;
+    return _dstr_concat_impl(s1, dstrlen(s1), s2, strlen(s2), cap);
 }
 
 // strappend
-static dstr dstrappend_base(dstr s, const dstr cs)
+dstr dstrappend_base(dstr s1, const dstr s2)
 {
-    dstrhd* hd = dstrfull(s);
-    dstrhd* chd = dstrfull(cs);
-    size_t new_len = hd->len + chd->len;
-
-    return _dstr_cat_append_helper(hd, chd->buf, chd->len, new_len, 0);
+    if (!s1 || !s2) return s1;
+    size_t s1_len = dstrlen(s1);
+    size_t s2_len = dstrlen(s2);
+    return _dstr_concat_impl(s1, s1_len, s2, s2_len, s1_len + s2_len);
 }
 
-static dstr dstrappend_custom(dstr s, const dstr cs, size_t cap)
+dstr dstrappend_custom(dstr s1, const dstr s2, size_t cap)
 {
-    dstrhd* hd = dstrfull(s);
-    dstrhd* chd = dstrfull(cs);
-    size_t new_len = hd->len + chd->len;
-
-    return _dstr_cat_append_helper(hd, chd->buf, chd->len, new_len, cap);
+    if (!s1 || !s2) return s1;
+    return _dstr_concat_impl(s1, dstrlen(s1), s2, dstrlen(s2), cap);
 }
 
 // strnew
-static dstr dstrnew_base(const char* msg)
+static dstr _dstrnew_allocator(enum dstrhd_type t, const char* msg, size_t s_len, size_t alloc_size)
+{
+    switch (t) {
+        case DSTRHD_TYPE_8: {
+            struct dstrhd8* hd = malloc(sizeof(*hd) + alloc_size);
+            if (!hd) return NULL;
+
+            hd->cap = (uint8_t)alloc_size;
+            hd->len = (uint8_t)s_len;
+            hd->type = DSTRHD_TYPE_8;
+
+            memcpy(hd->buf, msg, s_len + 1);
+            return (dstr)hd->buf;
+        }
+
+        case DSTRHD_TYPE_16: {
+            struct dstrhd16* hd = malloc(sizeof(*hd) + alloc_size);
+            if (!hd) return NULL;
+
+            hd->cap = (uint16_t)alloc_size;
+            hd->len = (uint16_t)s_len;
+            hd->type = DSTRHD_TYPE_16;
+
+            memcpy(hd->buf, msg, s_len + 1);
+            return (dstr)hd->buf;
+        }
+
+        case DSTRHD_TYPE_32: {
+            struct dstrhd32* hd = malloc(sizeof(*hd) + alloc_size);
+            if (!hd) return NULL;
+
+            hd->cap = (uint32_t)alloc_size;
+            hd->len = (uint32_t)s_len;
+            hd->type = DSTRHD_TYPE_32;
+
+            memcpy(hd->buf, msg, s_len + 1);
+            return (dstr)hd->buf;
+        }
+
+        case DSTRHD_TYPE_64: {
+            struct dstrhd64* hd = malloc(sizeof(*hd) + alloc_size);
+            if (!hd) return NULL;
+
+            hd->cap = (uint64_t)alloc_size;
+            hd->len = (uint64_t)s_len;
+            hd->type = DSTRHD_TYPE_64;
+
+            memcpy(hd->buf, msg, s_len + 1);
+            return (dstr)hd->buf;
+        }
+    }
+    return NULL;
+}
+
+dstr dstrnew_base(const char* msg)
 {
     size_t s_len = strlen(msg);
     size_t alloc_size = s_len+1;
 
-    if(alloc_size < DSTR_MIN_ALLOC_CAP) 
-        alloc_size = DSTR_MIN_ALLOC_CAP;
+    enum dstrhd_type t = _dstr_type_by_size(alloc_size);
 
-    struct dstrhd* hd = malloc((sizeof(struct dstrhd)) + (alloc_size));
-    if(!hd) return NULL;
-
-    hd->cap = alloc_size;
-    hd->len = s_len;
-    memcpy(hd->buf, msg, s_len+1);
-    return hd->buf;
+    return _dstrnew_allocator(t, msg, s_len, alloc_size);
 }
 
-static dstr dstrnew_custom(const char* msg, size_t cap)
+dstr dstrnew_custom(const char* msg, size_t cap)
 {
     size_t s_len = strlen(msg);
-    size_t alloc_size = cap;
+    size_t alloc_size = (s_len > cap) ? (s_len + 1) : cap;
 
-    if(s_len > cap) 
-        alloc_size = s_len+1;
+    enum dstrhd_type t = _dstr_type_by_size(alloc_size);
 
-    struct dstrhd* hd = malloc((sizeof(struct dstrhd)) + (alloc_size));
-    if(!hd) return NULL;
+    return _dstrnew_allocator(t, msg, s_len, alloc_size);
 
-    hd->cap = alloc_size;
-    hd->len = s_len;
-    memcpy(hd->buf, msg, s_len+1);
-    return hd->buf;
 }
 
 // strfree
-static void dstrfree(dstr s)
+void dstrfree(dstr s)
 {
-    struct dstrhd* strhd = dstrfull(s);
-    free(strhd);
+    enum dstrhd_type t = s[-1];
+
+    switch(t) {
+        case DSTRHD_TYPE_8: {
+            free(DSTRGETHDR(8, s));
+            return;
+        }
+        case DSTRHD_TYPE_16: {
+            free(DSTRGETHDR(16, s));
+            return;
+        }
+        case DSTRHD_TYPE_32: {
+            free(DSTRGETHDR(32, s));
+            return;
+        }
+        case DSTRHD_TYPE_64: {
+            free(DSTRGETHDR(64, s));
+            return;
+        }
+
+    }
 }
 
 #endif
