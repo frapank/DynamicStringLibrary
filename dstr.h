@@ -60,8 +60,8 @@ dstr dstrreserve(dstr s, size_t new_cap) NONNULL(1) W_UNUSED_RESULT;
 dstr dstrcat_base(dstr s, const char* cs) NONNULL(1,2) W_UNUSED_RESULT;
 dstr dstrcat_custom(dstr s, const char* cs, size_t cap) NONNULL(1,2) W_UNUSED_RESULT;
 
-dstr dstrappend_base(dstr s, const dstr cs) NONNULL(1,2) W_UNUSED_RESULT;
-dstr dstrappend_custom(dstr s, const dstr cs, size_t cap) NONNULL(1,2) W_UNUSED_RESULT;
+dstr dstrappend_base(dstr s1, const dstr s2) NONNULL(1,2) W_UNUSED_RESULT;
+dstr dstrappend_custom(dstr s1, const dstr s2, size_t cap) NONNULL(1,2) W_UNUSED_RESULT;
 
 dstr dstrnew_base(const char* msg) NONNULL(1) W_UNUSED_RESULT;
 dstr dstrnew_custom(const char* msg, size_t cap) NONNULL(1) W_UNUSED_RESULT;
@@ -380,23 +380,60 @@ dstr dstrcat_custom(dstr s, const char* cs, size_t cap)
 }
 
 // strappend
-dstr dstrappend_base(dstr s, const dstr cs)
+dstr dstrappend_base(dstr s1, const dstr s2)
 {
-    (void)s;
-    (void)cs;
-    //TODO
-    DSTR_TODO;
-    return NULL;
+    if (!s1 || !s2) return s1;
+
+    size_t s1_len = dstrlen(s1);
+    size_t s2_len = dstrlen(s2);
+    size_t new_len = s1_len + s2_len;
+
+    s1 = dstrreserve(s1, new_len);
+    if (!s1) return NULL;
+
+    uint8_t hdr_type = DSTRGETTYPE(s1);
+    void* hd = NULL;
+    switch(hdr_type) {
+        case DSTRHD_TYPE_8:  hd = DSTRGETHDR(8, s1); break;
+        case DSTRHD_TYPE_16: hd = DSTRGETHDR(16, s1); break;
+        case DSTRHD_TYPE_32: hd = DSTRGETHDR(32, s1); break;
+        case DSTRHD_TYPE_64: hd = DSTRGETHDR(64, s1); break;
+    }
+
+    memcpy(s1 + s1_len, s2, s2_len);
+    s1[new_len] = '\0';
+
+    _dstr_set_len(hd, new_len, hdr_type);
+
+    return s1;
 }
 
-dstr dstrappend_custom(dstr s, const dstr cs, size_t cap)
-{
-    (void)s;
-    (void)cs;
-    (void)cap;
-    //TODO
-    DSTR_TODO;
-    return NULL;
+dstr dstrappend_custom(dstr s1, const dstr s2, size_t cap)
+{    
+    if (!s1 || !s2) return s1;
+
+    size_t s1_len = dstrlen(s1);
+    size_t s2_len = dstrlen(s2);
+    size_t new_len = s1_len + s2_len;
+
+    s1 = dstrreserve(s1, cap);
+    if (!s1) return NULL;
+
+    uint8_t hdr_type = DSTRGETTYPE(s1);
+    void* hd = NULL;
+    switch(hdr_type) {
+        case DSTRHD_TYPE_8:  hd = DSTRGETHDR(8, s1); break;
+        case DSTRHD_TYPE_16: hd = DSTRGETHDR(16, s1); break;
+        case DSTRHD_TYPE_32: hd = DSTRGETHDR(32, s1); break;
+        case DSTRHD_TYPE_64: hd = DSTRGETHDR(64, s1); break;
+    }
+
+    memcpy(s1 + s1_len, s2, s2_len);
+    s1[new_len] = '\0';
+
+    _dstr_set_len(hd, new_len, hdr_type);
+
+    return s1;
 }
 
 // strnew
