@@ -52,16 +52,16 @@ typedef char* dstr;
 size_t dstrlen(dstr s) NONNULL(1) W_UNUSED_RESULT;
 size_t dstrcap(dstr s) NONNULL(1) W_UNUSED_RESULT;
 
-//inline dstr dstrdup(dstr s) NONNULL(1) W_UNUSED_RESULT;
-//inline void dstrclear(dstr s) NONNULL(1);
-//inline _Bool dstrcmp(dstr s1, dstr s2) NONNULL(1,2) W_UNUSED_RESULT;
+inline dstr dstrdup(dstr s) NONNULL(1) W_UNUSED_RESULT;
+inline void dstrclear(dstr s) NONNULL(1);
+inline _Bool dstrcmp(dstr s1, dstr s2) NONNULL(1,2) W_UNUSED_RESULT;
 dstr dstrreserve(dstr s, size_t new_cap) NONNULL(1) W_UNUSED_RESULT;
 
-//dstr dstrcat_base(dstr s, const char* cs) NONNULL(1,2) W_UNUSED_RESULT;
-//dstr dstrcat_custom(dstr s, const char* cs, size_t cap) NONNULL(1,2) W_UNUSED_RESULT;
+dstr dstrcat_base(dstr s, const char* cs) NONNULL(1,2) W_UNUSED_RESULT;
+dstr dstrcat_custom(dstr s, const char* cs, size_t cap) NONNULL(1,2) W_UNUSED_RESULT;
 
-//dstr dstrappend_base(dstr s, const dstr cs) NONNULL(1,2) W_UNUSED_RESULT;
-//dstr dstrappend_custom(dstr s, const dstr cs, size_t cap) NONNULL(1,2) W_UNUSED_RESULT;
+dstr dstrappend_base(dstr s, const dstr cs) NONNULL(1,2) W_UNUSED_RESULT;
+dstr dstrappend_custom(dstr s, const dstr cs, size_t cap) NONNULL(1,2) W_UNUSED_RESULT;
 
 dstr dstrnew_base(const char* msg) NONNULL(1) W_UNUSED_RESULT;
 dstr dstrnew_custom(const char* msg, size_t cap) NONNULL(1) W_UNUSED_RESULT;
@@ -110,6 +110,11 @@ struct __attribute__((packed)) dstrhd64 {
 #define DSTRGETHDR(n,s) \
     ((struct dstrhd##n *)((char*)(s) - sizeof(struct dstrhd##n)))
 #define DSTRGETTYPE(s) ((uint8_t)((s)[-1]))
+#define DSTR_TODO \
+    do { \
+        fprintf(stderr, "dstr: function not implemented yet"); \
+        exit(1); \
+    } while (0)
 
 static inline enum dstrhd_type _dstr_type_by_size(size_t cap) 
 {
@@ -242,20 +247,23 @@ size_t dstrcap(dstr s)
     return 0;
 }
 
-//// strdup
-//dstr dstrdup(dstr s) {
-//    //dstrhd* hd = dstrfull(s);
-//    return dstrnew_custom(hd->buf, hd->cap-1);
-//}
-//
-//// strclear
-//void dstrclear(dstr s)
-//{
-//    //dstrhd* hd = dstrfull(s);
-//    if(hd->len == 0) return;
-//    memset(hd->buf, 0, hd->cap);
-//    hd->len = 0;
-//}
+// strdup
+dstr dstrdup(dstr s) 
+{
+    (void)s;
+    //TODO
+    DSTR_TODO;
+    return NULL;
+}
+
+// strclear
+void dstrclear(dstr s)
+{
+    (void)s;
+    //TODO
+    DSTR_TODO;
+    return;
+}
 
 // strreserve
 dstr dstrreserve(dstr s, size_t new_cap)
@@ -306,78 +314,55 @@ dstr dstrreserve(dstr s, size_t new_cap)
     return new_buf;
 }
 
-//// strcmp
-//inline _Bool dstrcmp(dstr s1, dstr s2)
-//{
-//    //dstrhd* hd1 = dstrfull(s1);
-//    //dstrhd* hd2 = dstrfull(s2);
-//
-//    if(hd1->len != hd2->len) 
-//        return 0;
-//
-//    return memcmp(hd1->buf, hd2->buf, hd1->len) == 0;
-//}
-//
-//// strcat & strappend helper
-//static inline char* _dstr_cat_append_helper(dstrhd* hd, const char* s, 
-//        size_t s_len, size_t new_len, size_t hint_cap)
-//{
-//    dstrhd* tmp = hd;
-//
-//    if (hd->cap < new_len+1) {
-//        size_t new_cap = tmp->cap * 2;
-//        if (new_cap < new_len+1) new_cap = new_len+1;
-//        if (hint_cap > new_cap) new_cap = hint_cap;
-//
-//        tmp = realloc(hd, sizeof(dstrhd) + new_cap);
-//        if (!tmp) return NULL;
-//
-//        tmp->cap = new_cap;
-//    }
-//
-//    memcpy(tmp->buf + tmp->len, s, s_len);
-//    tmp->buf[new_len] = '\0';
-//    tmp->len = new_len;
-//    return tmp->buf;
-//}
-//
-//// strcat
-//dstr dstrcat_base(dstr s, const char* cs)
-//{
-//    //dstrhd* hd = dstrfull(s);
-//    size_t cs_len = strlen(cs);
-//    size_t new_len = hd->len + cs_len;
-//
-//    return _dstr_cat_append_helper(hd, cs, cs_len, new_len, 0);
-//}
-//
-//dstr dstrcat_custom(dstr s, const char* cs, size_t cap)
-//{
-//    //dstrhd* hd = dstrfull(s);
-//    size_t cs_len = strlen(cs);
-//    size_t new_len = hd->len + cs_len;
-//
-//    return _dstr_cat_append_helper(hd, cs, cs_len, new_len, cap);
-//}
-//
-//// strappend
-//dstr dstrappend_base(dstr s, const dstr cs)
-//{
-//    //dstrhd* hd = dstrfull(s);
-//    //dstrhd* chd = dstrfull(cs);
-//    size_t new_len = hd->len + chd->len;
-//
-//    return _dstr_cat_append_helper(hd, chd->buf, chd->len, new_len, 0);
-//}
-//
-//dstr dstrappend_custom(dstr s, const dstr cs, size_t cap)
-//{
-//    //dstrhd* hd = dstrfull(s);
-//    //dstrhd* chd = dstrfull(cs);
-//    size_t new_len = hd->len + chd->len;
-//
-//    return _dstr_cat_append_helper(hd, chd->buf, chd->len, new_len, cap);
-//}
+// strcmp
+inline _Bool dstrcmp(dstr s1, dstr s2)
+{
+    (void)s1;
+    (void)s2;
+    //TODO
+    DSTR_TODO;
+    return 0;
+}
+
+// strcat
+dstr dstrcat_base(dstr s, const char* cs)
+{
+    (void)s;
+    (void)cs;
+    //TODO
+    DSTR_TODO;
+    return NULL;
+}
+
+dstr dstrcat_custom(dstr s, const char* cs, size_t cap)
+{
+    (void)s;
+    (void)cs;
+    (void)cap;
+    //TODO
+    DSTR_TODO;
+    return NULL;
+}
+
+// strappend
+dstr dstrappend_base(dstr s, const dstr cs)
+{
+    (void)s;
+    (void)cs;
+    //TODO
+    DSTR_TODO;
+    return NULL;
+}
+
+dstr dstrappend_custom(dstr s, const dstr cs, size_t cap)
+{
+    (void)s;
+    (void)cs;
+    (void)cap;
+    //TODO
+    DSTR_TODO;
+    return NULL;
+}
 
 // strnew
 static dstr _dstrnew_allocator(enum dstrhd_type t, const char* msg, size_t s_len, size_t alloc_size)
