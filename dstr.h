@@ -57,8 +57,8 @@ inline void dstrclear(dstr s) NONNULL(1);
 inline _Bool dstrcmp(dstr s1, dstr s2) NONNULL(1,2) W_UNUSED_RESULT;
 dstr dstrreserve(dstr s, size_t new_cap) NONNULL(1) W_UNUSED_RESULT;
 
-dstr dstrcat_base(dstr s, const char* cs) NONNULL(1,2) W_UNUSED_RESULT;
-dstr dstrcat_custom(dstr s, const char* cs, size_t cap) NONNULL(1,2) W_UNUSED_RESULT;
+dstr dstrcat_base(dstr s1, const char* s2) NONNULL(1,2) W_UNUSED_RESULT;
+dstr dstrcat_custom(dstr s1, const char* s2, size_t cap) NONNULL(1,2) W_UNUSED_RESULT;
 
 dstr dstrappend_base(dstr s1, const dstr s2) NONNULL(1,2) W_UNUSED_RESULT;
 dstr dstrappend_custom(dstr s1, const dstr s2, size_t cap) NONNULL(1,2) W_UNUSED_RESULT;
@@ -359,81 +359,57 @@ inline _Bool dstrcmp(dstr s1, dstr s2)
     return memcmp(s1, s2, dstrlen(s1)) == 0;
 }
 
-// strcat
-dstr dstrcat_base(dstr s, const char* cs)
+// strcat & strappend
+static dstr _dstr_concat_impl(dstr s1, size_t s1_len,
+                               const char* s2, size_t s2_len,
+                               size_t cap)
 {
-    (void)s;
-    (void)cs;
-    //TODO
-    DSTR_TODO;
-    return NULL;
+    size_t new_len = s1_len + s2_len;
+    s1 = dstrreserve(s1, cap);
+    if (!s1) return NULL;
+
+    uint8_t hdr_type = DSTRGETTYPE(s1);
+    void* hd = NULL;
+    switch (hdr_type) {
+        case DSTRHD_TYPE_8:  hd = DSTRGETHDR(8,  s1); break;
+        case DSTRHD_TYPE_16: hd = DSTRGETHDR(16, s1); break;
+        case DSTRHD_TYPE_32: hd = DSTRGETHDR(32, s1); break;
+        case DSTRHD_TYPE_64: hd = DSTRGETHDR(64, s1); break;
+    }
+    memcpy(s1 + s1_len, s2, s2_len);
+    s1[new_len] = '\0';
+    _dstr_set_len(hd, new_len, hdr_type);
+    return s1;
 }
 
-dstr dstrcat_custom(dstr s, const char* cs, size_t cap)
+// strcat
+dstr dstrcat_base(dstr s1, const char* s2)
 {
-    (void)s;
-    (void)cs;
-    (void)cap;
-    //TODO
-    DSTR_TODO;
-    return NULL;
+    if (!s1 || !s2) return s1;
+    size_t s1_len = dstrlen(s1);
+    size_t s2_len = strlen(s2);
+    return _dstr_concat_impl(s1, s1_len, s2, s2_len, s1_len + s2_len);
+}
+
+dstr dstrcat_custom(dstr s1, const char* s2, size_t cap)
+{
+    if (!s1 || !s2) return s1;
+    return _dstr_concat_impl(s1, dstrlen(s1), s2, strlen(s2), cap);
 }
 
 // strappend
 dstr dstrappend_base(dstr s1, const dstr s2)
 {
     if (!s1 || !s2) return s1;
-
     size_t s1_len = dstrlen(s1);
     size_t s2_len = dstrlen(s2);
-    size_t new_len = s1_len + s2_len;
-
-    s1 = dstrreserve(s1, new_len);
-    if (!s1) return NULL;
-
-    uint8_t hdr_type = DSTRGETTYPE(s1);
-    void* hd = NULL;
-    switch(hdr_type) {
-        case DSTRHD_TYPE_8:  hd = DSTRGETHDR(8, s1); break;
-        case DSTRHD_TYPE_16: hd = DSTRGETHDR(16, s1); break;
-        case DSTRHD_TYPE_32: hd = DSTRGETHDR(32, s1); break;
-        case DSTRHD_TYPE_64: hd = DSTRGETHDR(64, s1); break;
-    }
-
-    memcpy(s1 + s1_len, s2, s2_len);
-    s1[new_len] = '\0';
-
-    _dstr_set_len(hd, new_len, hdr_type);
-
-    return s1;
+    return _dstr_concat_impl(s1, s1_len, s2, s2_len, s1_len + s2_len);
 }
 
 dstr dstrappend_custom(dstr s1, const dstr s2, size_t cap)
-{    
+{
     if (!s1 || !s2) return s1;
-
-    size_t s1_len = dstrlen(s1);
-    size_t s2_len = dstrlen(s2);
-    size_t new_len = s1_len + s2_len;
-
-    s1 = dstrreserve(s1, cap);
-    if (!s1) return NULL;
-
-    uint8_t hdr_type = DSTRGETTYPE(s1);
-    void* hd = NULL;
-    switch(hdr_type) {
-        case DSTRHD_TYPE_8:  hd = DSTRGETHDR(8, s1); break;
-        case DSTRHD_TYPE_16: hd = DSTRGETHDR(16, s1); break;
-        case DSTRHD_TYPE_32: hd = DSTRGETHDR(32, s1); break;
-        case DSTRHD_TYPE_64: hd = DSTRGETHDR(64, s1); break;
-    }
-
-    memcpy(s1 + s1_len, s2, s2_len);
-    s1[new_len] = '\0';
-
-    _dstr_set_len(hd, new_len, hdr_type);
-
-    return s1;
+    return _dstr_concat_impl(s1, dstrlen(s1), s2, dstrlen(s2), cap);
 }
 
 // strnew
