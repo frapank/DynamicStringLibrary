@@ -2,13 +2,13 @@
 
 ## Overview
 
-dstr is a header-only library for dynamic strings in C (C11+). It provides a `char*` interface backed by an internal allocation header that stores length and capacity information.
+dstr is a header-only dynamic string library for C (C11+). It exposes a `char*` interface backed by a hidden allocation header that stores length and capacity. Strings are heap-allocated and may be reallocated automatically during operations.
 
-Strings are heap allocated and may be reallocated automatically during operations such as concatenation. The library is designed to integrate with standard C code without requiring wrappers or custom string types in user code.
+Requires gcc or clang. Supported architectures: x86, x86-64, ARM, ARM64.
 
 ## Build
 
-Define the implementation in a single source file:
+Define the implementation once in a single translation unit:
 
 ```c
 #define DSTR_IMPLEMENTATION
@@ -17,174 +17,134 @@ Define the implementation in a single source file:
 
 ## Types
 
-* `dstr`: public string type (`char*`)
-* `dstrhd`: internal header containing metadata and buffer
-* `dstrhdp`: pointer to `dstrhd`
+`dstr` is a `char*`. The internal headers (`dstrhd8`, `dstrhd16`, `dstrhd32`, `dstrhd64`) are implementation details and not part of the public API. The header type used for a given string is selected automatically based on the required capacity.
 
-## Allocation model
+## Memory layout
 
-String allocation is handled through `dstrnew`.
+```
+[dstrhd{8|16|32|64}][char buffer]
+```
 
-* If only a `const char*` is provided, the library allocates at least 10 bytes or more if the string is longer.
-* If a second argument is provided, it is used as the initial capacity.
-* If the provided capacity is smaller than the required string length, it is automatically increased to fit the string.
+The `dstr` pointer points to the buffer. The header immediately precedes it in memory and stores `len`, `cap`, and a `type` byte used to identify the header variant at runtime. The `type` byte is always at `s[-1]`.
 
-This rule applies to all allocation-based functions that accept optional capacity arguments: the value is treated as a hint and never allowed to produce an invalid allocation.
+Header sizes grow with string capacity:
 
-## Generic function dispatch
+| Type      | Max capacity       |
+|-----------|--------------------|
+| dstrhd8   | 255                |
+| dstrhd16  | 65,535             |
+| dstrhd32  | 4,294,967,295      |
+| dstrhd64  | 2^64 - 1           |
 
-Some functions use C11 `_Generic` to provide type-aware dispatch at compile time.
+## API
 
-Functions such as `dstrlen`, `dstrdup`, and `dstrclear` automatically resolve to different implementations depending on the input type:
-
-* `dstr` (raw string pointer)
-* `dstrhd` (header)
-* `dstrhdp` (pointer to header)
-
-This allows the same function name to correctly handle different representations of the same string data without requiring manual conversion or explicit function selection.
-
-## Usage
-
-### Create a string
-
-You can create a string with the following code:
+### Create
 
 ```c
 dstr s = dstrnew("hello");
+dstr s = dstrnew("hello", 64); // 64 capacity
 ```
 
-The default capacity of the string is 10. If the string is longer, the capacity will automatically match the string length.
-You can assign a custom capacity with:
+If a capacity is provided and is smaller than the string length, it is automatically increased to fit. The allocation size matches the string length plus null terminator when no capacity is given.
+
+### Length and capacity
 
 ```c
-dstr s = dstrnew("hello", 64);
+size_t len = dstrlen(s);
+size_t cap = dstrcap(s);
 ```
 
-If the specified capacity is smaller than the required size, it is automatically adjusted.
+Both return `size_t`.
 
-### Get length
-
-`dstrlen` returns an `unsigned int` with the string length. It works with `dstr`, `dstrhd`, and `dstrhdp`:
+### Concatenate (`dstr` + `char*`)
 
 ```c
-unsigned int len = dstrlen(s);
+s = dstrcat(s, "world");
+s = dstrcat(s, "world", 128); // 128 capacity
 ```
 
-### Concatenate (`dstr` to `char*`)
+The first argument must be a `dstr`. The second is a `const char*`. Use `dstrappend` when the second argument is also a `dstr`.
 
-The `dstrcat` function concatenates two strings. The first argument **must** be a `dstr`, and the second can be either a `char*` or a `dstr`.
-
-> If you pass a `dstr` as the second argument, it is recommended to use `dstrappend` instead.
-
-Example usage:
-
-```c
-s = dstrcat(s, "example");
-```
-
-Like `dstrnew`, you can also specify a custom capacity:
-
-```c
-s = dstrcat(s, "example", 128);
-```
-
-If the provided capacity is insufficient, it will be **automatically increased**.
-
-### Append (`dstr` to `dstr`)
-
-The `dstrappend` function concatenates two dynamic strings. Both the first and second arguments **must** be a `dstr`.
-
-> You **cannot** pass a `char*` as the second argument, use `dstrcat` instead for that case.
-
-Example usage:
+### Append (`dstr` + `dstr`)
 
 ```c
 s = dstrappend(s, s2);
+s = dstrappend(s, s2, 128); // 128 capacity
 ```
 
-Like `dstrnew`, you can also specify a custom capacity:
+Both arguments must be `dstr`. Passing a `char*` as the second argument is not supported.
+
+### Reserve capacity
 
 ```c
-s = dstrappend(s, s2, 128);
+s = dstrreserve(s, 256);
 ```
 
-If the provided capacity is insufficient, it will be **automatically increased**.
+Grows the allocation to at least `new_cap`. No-op if current capacity is already sufficient. The returned pointer must be reassigned as the buffer may move during reallocation. If the header type changes due to the new size, a new allocation is made and the old one is freed.
 
 ### Duplicate
-
-`dstrdup` returns a duplicate of the provided string. It works with `dstr`, `dstrhd`, and `dstrhdp`:
 
 ```c
 dstr copy = dstrdup(s);
 ```
 
-### Clear string
-
-`dstrclear` clears the string while retaining the allocated memory. It works with `dstr` and `dstrhdp`:
+### Clear
 
 ```c
 dstrclear(s);
 ```
 
-### Resize string
+Resets the string content without freeing the allocation.
 
-`dstrresize` adjusts the capacity of an existing string. It accepts both `dstr` and `dstrhdp` types, returning a potentially reallocated pointer:
-
-```c
-s = dstrresize(s, 128);
-hd = dstrresize(hd, 256);
-```
-
-If the provided capacity is insufficient, it is increased automatically.
-The returned pointer **must be reassigned**, as the buffer may have moved during reallocation.
-
-### Compare strings
-
-`dstrcmp` compares two dynamic strings and returns `1` if they are equal, `0` otherwise. The function accepts both `dstr` and `dstrhd*` types in any order:
+### Compare
 
 ```c
-if(dstrcmp(s, hd)) {
-    // ...
-}
+if (dstrcmp(s1, s2)) { ... }
 ```
 
-This function **does not** accept raw `char*` arguments. If you need to compare a `dstr` with a `char*`, use the standard C `strcmp` function instead.
+Returns `1` if the strings are equal, `0` otherwise. Both arguments must be `dstr`. For `dstr` vs `char*` comparisons use `strcmp` directly.
 
-### Free string
-
-`dstrfree` frees the string:
+### Free
 
 ```c
 dstrfree(s);
 ```
 
-## Memory layout
+## Automatic cleanup
 
-Each string is stored as:
+When `DSTR_SHORTCUT` is defined, `dstrauto` declares a `dstr` with `__attribute__((cleanup))` — the string is freed automatically when it goes out of scope:
 
+```c
+dstrauto dstr s = dstrnew("hello");
 ```
-[dstrhd][char buffer]
-```
 
-The `dstr` pointer refers directly to the buffer, while metadata (length and capacity) is stored in the hidden header.
+## Shortcut macro
+
+When `DSTR_SHORTCUT` is defined, `$()` works as an alias for `dstrnew`:
+
+```c
+#define DSTR_SHORTCUT
+#include "dstr.h"
+
+dstr s = $("hello");
+dstr s = $("hello", 64);
+```
 
 ## Notes
 
-* Strings are always null-terminated.
-* Functions may return reallocated pointers and must be reassigned.
-* Default minimum allocation size is 10 bytes.
-* Capacity arguments are hints and never override minimum required size.
-* Memory ownership is handled entirely by the library.
+- Strings are always null-terminated.
+- All functions that return `dstr` may return a reallocated pointer; always reassign.
+- Capacity arguments are hints and are silently increased if insufficient.
 
-## ROADMAP
+## Roadmap
 
-* **dstrinsert:** Insert substring at position — Insert a byte sequence at a given index, shifting data and updating len/alloc safely.
-* **dstrfind:** Search character — Find first (or last) occurrence of a character/substring and return index or -1.
-* **dstrpush:** Append single character — Append one byte to the end, growing the buffer using amortized growth.
-* **dstrtrim:** Trim characters — Remove leading/trailing whitespace or a specified set of chars, adjusting len without realloc when possible.
-* **dstrrange:** Extract range — Keep or return a substring defined by start and end indices (supports negative indices).
-* **dstrsplit:** Split string — Tokenize by a delimiter into an array/list of dynamic strings, reusing buffers when feasible.
-* **dstrtolower / dstrtoupper:** Case conversion — Convert ASCII characters to lower/upper case in-place.
+- **dstrinsert** — insert substring at a given index
+- **dstrfind** — find first or last occurrence of a char or substring
+- **dstrpush** — append a single byte with amortized growth
+- **dstrtrim** — strip leading/trailing whitespace or a given charset
+- **dstrrange** — return a substring by start/end index
+- **dstrsplit** — split by delimiter into an array of `dstr`
+- **dstrtolower / dstrtoupper** — in-place ASCII case conversion
 
 ## License
 
