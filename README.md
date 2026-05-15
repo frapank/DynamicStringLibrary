@@ -135,7 +135,6 @@ dstr s = $("hello", 64);
 - Strings are always null-terminated.
 - All functions that return `dstr` may return a reallocated pointer; always reassign.
 - Capacity arguments are hints and are silently increased if insufficient.
-- `dstrcat`, `dstrappend`, `dstrdup`, `dstrclear`, and `dstrcmp` are not yet implemented.
 
 ## Roadmap
 
