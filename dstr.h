@@ -55,7 +55,7 @@ size_t dstrcap(dstr s) NONNULL(1) W_UNUSED_RESULT;
 //inline dstr dstrdup(dstr s) NONNULL(1) W_UNUSED_RESULT;
 //inline void dstrclear(dstr s) NONNULL(1);
 //inline _Bool dstrcmp(dstr s1, dstr s2) NONNULL(1,2) W_UNUSED_RESULT;
-//dstr dstrreserve(dstr s, size_t cap) NONNULL(1) W_UNUSED_RESULT;
+dstr dstrreserve(dstr s, size_t new_cap) NONNULL(1) W_UNUSED_RESULT;
 
 //dstr dstrcat_base(dstr s, const char* cs) NONNULL(1,2) W_UNUSED_RESULT;
 //dstr dstrcat_custom(dstr s, const char* cs, size_t cap) NONNULL(1,2) W_UNUSED_RESULT;
@@ -109,8 +109,7 @@ struct __attribute__((packed)) dstrhd64 {
 // Utils
 #define DSTRGETHDR(n,s) \
     ((struct dstrhd##n *)((char*)(s) - sizeof(struct dstrhd##n)))
-#define DSTRGETTYPE(s) \
-    s[-1]
+#define DSTRGETTYPE(s) ((uint8_t)((s)[-1]))
 
 static inline enum dstrhd_type _dstr_type_by_size(size_t cap) 
 {
@@ -120,9 +119,66 @@ static inline enum dstrhd_type _dstr_type_by_size(size_t cap)
     return DSTRHD_TYPE_64;
 }
 
-static inline dstr _dstr_change_header(dstr s, enum dstrhd_type t)
+static inline size_t _dstr_size_by_type(enum dstrhd_type type)
 {
-          
+    switch(type) {
+        case DSTRHD_TYPE_8: 
+            return sizeof(struct dstrhd8);
+        case DSTRHD_TYPE_16: 
+            return sizeof(struct dstrhd16);
+        case DSTRHD_TYPE_32: 
+            return sizeof(struct dstrhd32);
+        case DSTRHD_TYPE_64: 
+            return sizeof(struct dstrhd64);
+        default:
+            return 0;
+    }
+}
+
+static inline void _dstr_set_len(void* hd,
+                                 size_t new_len,
+                                 enum dstrhd_type type)
+{
+    switch(type) {
+        case DSTRHD_TYPE_8:
+            ((struct dstrhd8*)hd)->len = (uint8_t)new_len;
+            return;
+
+        case DSTRHD_TYPE_16:
+            ((struct dstrhd16*)hd)->len = (uint16_t)new_len;
+            return;
+
+        case DSTRHD_TYPE_32:
+            ((struct dstrhd32*)hd)->len = (uint32_t)new_len;
+            return;
+
+        case DSTRHD_TYPE_64:
+            ((struct dstrhd64*)hd)->len = (uint64_t)new_len;
+            return;
+    }
+}
+
+static inline void _dstr_set_cap(void* hd,
+                                 size_t new_cap,
+                                 enum dstrhd_type type)
+{
+    switch(type) {
+        case DSTRHD_TYPE_8:
+            ((struct dstrhd8*)hd)->cap = (uint8_t)new_cap;
+            return;
+
+        case DSTRHD_TYPE_16:
+            ((struct dstrhd16*)hd)->cap = (uint16_t)new_cap;
+            return;
+
+        case DSTRHD_TYPE_32:
+            ((struct dstrhd32*)hd)->cap = (uint32_t)new_cap;
+            return;
+
+        case DSTRHD_TYPE_64:
+            ((struct dstrhd64*)hd)->cap = (uint64_t)new_cap;
+            return;
+    }
 }
 
 // Shortcut
@@ -200,25 +256,56 @@ size_t dstrcap(dstr s)
 //    memset(hd->buf, 0, hd->cap);
 //    hd->len = 0;
 //}
-//
-//// strresize
-//dstr dstrreserve(dstr s, size_t cap)
-//{
-//    //dstrhd* hd = dstrfull(s);
-//
-//    if(hd->cap >= cap)
-//        return hd->buf;
-//
-//    dstrhd* tmp = realloc(hd, sizeof(dstrhd) + cap);
-//    if(!tmp)
-//        return NULL;
-//
-//    size_t old_cap = tmp->cap;
-//    tmp->cap = cap;
-//    memset(tmp->buf + old_cap, 0, cap - old_cap);
-//    return tmp->buf;
-//}
-//
+
+// strreserve
+dstr dstrreserve(dstr s, size_t new_cap)
+{
+    size_t s_len = dstrlen(s);
+
+    if (new_cap <= dstrcap(s))
+        return s;
+
+    if (new_cap < s_len + 1)
+        new_cap = s_len + 1;
+
+    enum dstrhd_type old_type = DSTRGETTYPE(s);
+    enum dstrhd_type new_type = _dstr_type_by_size(new_cap);
+
+    size_t old_hd_size = _dstr_size_by_type(old_type);
+    size_t new_hd_size = _dstr_size_by_type(new_type);
+
+    void* old_hd = (char*)s - old_hd_size;
+
+    if(old_type == new_type) {
+        void* new_hd = realloc(old_hd, new_hd_size + new_cap);
+        if(!new_hd) 
+            return NULL;
+
+        s = (char*)new_hd + new_hd_size;
+
+        _dstr_set_len(new_hd, s_len, new_type);
+        _dstr_set_cap(new_hd, new_cap, new_type);
+
+        return s;
+    }  
+    
+    void* new_hd = malloc(new_hd_size + new_cap);
+    if (!new_hd) 
+        return NULL;
+
+    _dstr_set_len(new_hd, s_len, new_type);
+    _dstr_set_cap(new_hd, new_cap, new_type);
+
+    *((char*)new_hd + new_hd_size-1) = (uint8_t)new_type;
+
+    char* new_buf = (char*)new_hd + new_hd_size;
+    memcpy(new_buf, s, s_len + 1);
+
+    free(old_hd);
+
+    return new_buf;
+}
+
 //// strcmp
 //inline _Bool dstrcmp(dstr s1, dstr s2)
 //{
