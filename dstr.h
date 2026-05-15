@@ -353,11 +353,10 @@ dstr dstrreserve(dstr s, size_t new_cap)
 // strcmp
 inline _Bool dstrcmp(dstr s1, dstr s2)
 {
-    (void)s1;
-    (void)s2;
-    //TODO
-    DSTR_TODO;
-    return 0;
+    if (dstrlen(s1) != dstrlen(s2))
+        return 0;
+
+    return memcmp(s1, s2, dstrlen(s1)) == 0;
 }
 
 // strcat
