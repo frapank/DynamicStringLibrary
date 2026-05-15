@@ -248,21 +248,57 @@ size_t dstrcap(dstr s)
 }
 
 // strdup
-dstr dstrdup(dstr s) 
+dstr dstrdup(dstr s)
 {
-    (void)s;
-    //TODO
-    DSTR_TODO;
-    return NULL;
+    if (!s) return NULL;
+
+    enum dstrhd_type t = DSTRGETTYPE(s);
+    size_t len = dstrlen(s);
+    size_t cap = dstrcap(s);
+
+    void* old_hd = NULL;
+    switch (t) {
+        case DSTRHD_TYPE_8:  old_hd = DSTRGETHDR(8, s);  break;
+        case DSTRHD_TYPE_16: old_hd = DSTRGETHDR(16, s); break;
+        case DSTRHD_TYPE_32: old_hd = DSTRGETHDR(32, s); break;
+        case DSTRHD_TYPE_64: old_hd = DSTRGETHDR(64, s); break;
+    }
+
+    if (!old_hd) return NULL;
+
+    size_t hd_size = _dstr_size_by_type(t);
+    void* new_hd = malloc(hd_size + cap);
+    if (!new_hd) return NULL;
+
+    _dstr_set_len(new_hd, len, t);
+    _dstr_set_cap(new_hd, cap, t);
+
+    *((uint8_t*)new_hd + hd_size - 1) = (uint8_t)t;
+
+    memcpy((char*)new_hd + hd_size, s, len + 1);
+
+    return (char*)new_hd + hd_size;
 }
 
 // strclear
 void dstrclear(dstr s)
 {
-    (void)s;
-    //TODO
-    DSTR_TODO;
-    return;
+    enum dstrhd_type t = DSTRGETTYPE(s);
+    void* hd = NULL;
+
+    switch(t) {
+        case DSTRHD_TYPE_8: hd = DSTRGETHDR(8, s); break;
+        case DSTRHD_TYPE_16: hd = DSTRGETHDR(16, s); break;
+        case DSTRHD_TYPE_32: hd = DSTRGETHDR(32, s); break;
+        case DSTRHD_TYPE_64: hd = DSTRGETHDR(64, s); break;
+    }
+
+    if (!hd) return;
+
+    _dstr_set_len(hd, 0, t);
+
+    size_t cap = dstrcap(s);
+    memset(s, 0, cap);
 }
 
 // strreserve
