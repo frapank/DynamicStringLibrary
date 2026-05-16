@@ -36,9 +36,6 @@
 #define dstrappend(...) \
     GET_DSTRAPPEND(__VA_ARGS__, dstrappend_custom, dstrappend_base)(__VA_ARGS__)
 
-#define NONNULL(...) \
-    __attribute__((nonnull(__VA_ARGS__)))
-
 #define W_UNUSED_RESULT \
     __attribute__((warn_unused_result))
 
@@ -46,27 +43,27 @@ typedef char* dstr;
 
 // Functions
 #ifdef DSTR_SHORTCUT
-    inline void _dstr_autofree(dstr* s) NONNULL(1);
+    inline void _dstr_autofree(dstr* s);
 #endif
 
-size_t dstrlen(dstr s) NONNULL(1) W_UNUSED_RESULT;
-size_t dstrcap(dstr s) NONNULL(1) W_UNUSED_RESULT;
+size_t dstrlen(dstr s) W_UNUSED_RESULT;
+size_t dstrcap(dstr s) W_UNUSED_RESULT;
 
-inline dstr dstrdup(dstr s) NONNULL(1) W_UNUSED_RESULT;
-inline void dstrclear(dstr s) NONNULL(1);
-inline _Bool dstrcmp(dstr s1, dstr s2) NONNULL(1,2) W_UNUSED_RESULT;
-dstr dstrreserve(dstr s, size_t new_cap) NONNULL(1) W_UNUSED_RESULT;
+inline dstr dstrdup(dstr s) W_UNUSED_RESULT;
+inline void dstrclear(dstr s);
+inline _Bool dstrcmp(dstr s1, dstr s2) W_UNUSED_RESULT;
+dstr dstrreserve(dstr s, size_t new_cap) W_UNUSED_RESULT;
 
-dstr dstrcat_base(dstr s1, const char* s2) NONNULL(1,2) W_UNUSED_RESULT;
-dstr dstrcat_custom(dstr s1, const char* s2, size_t cap) NONNULL(1,2) W_UNUSED_RESULT;
+dstr dstrcat_base(dstr s1, const char* s2) W_UNUSED_RESULT;
+dstr dstrcat_custom(dstr s1, const char* s2, size_t cap) W_UNUSED_RESULT;
 
-dstr dstrappend_base(dstr s1, const dstr s2) NONNULL(1,2) W_UNUSED_RESULT;
-dstr dstrappend_custom(dstr s1, const dstr s2, size_t cap) NONNULL(1,2) W_UNUSED_RESULT;
+dstr dstrappend_base(dstr s1, const dstr s2) W_UNUSED_RESULT;
+dstr dstrappend_custom(dstr s1, const dstr s2, size_t cap) W_UNUSED_RESULT;
 
-dstr dstrnew_base(const char* msg) NONNULL(1) W_UNUSED_RESULT;
-dstr dstrnew_custom(const char* msg, size_t cap) NONNULL(1) W_UNUSED_RESULT;
+dstr dstrnew_base(const char* msg) W_UNUSED_RESULT;
+dstr dstrnew_custom(const char* msg, size_t cap) W_UNUSED_RESULT;
 
-void dstrfree(dstr s) NONNULL(1);
+void dstrfree(dstr s);
 
 /* Implementation */
 #ifdef DSTR_IMPLEMENTATION
@@ -110,11 +107,6 @@ struct __attribute__((packed)) dstrhd64 {
 #define DSTRGETHDR(n,s) \
     ((struct dstrhd##n *)((char*)(s) - sizeof(struct dstrhd##n)))
 #define DSTRGETTYPE(s) ((uint8_t)((s)[-1]))
-#define DSTR_TODO \
-    do { \
-        fprintf(stderr, "dstr: function not implemented yet"); \
-        exit(1); \
-    } while (0)
 
 static inline enum dstrhd_type _dstr_type_by_size(size_t cap) 
 {
@@ -208,6 +200,7 @@ void _dstr_autofree(dstr* s)
 // strlen
 size_t dstrlen(dstr s)
 {
+    if(!s) return 0;
     enum dstrhd_type t = DSTRGETTYPE(s);
     switch(t) {
         case DSTRHD_TYPE_8: {
@@ -229,6 +222,7 @@ size_t dstrlen(dstr s)
 // dstrcap
 size_t dstrcap(dstr s)
 {
+    if(!s) return 0;
     enum dstrhd_type t = DSTRGETTYPE(s);
     switch(t) {
         case DSTRHD_TYPE_8: {
@@ -283,6 +277,7 @@ dstr dstrdup(dstr s)
 // strclear
 void dstrclear(dstr s)
 {
+    if(!s) return;
     enum dstrhd_type t = DSTRGETTYPE(s);
     void* hd = NULL;
 
@@ -304,6 +299,7 @@ void dstrclear(dstr s)
 // strreserve
 dstr dstrreserve(dstr s, size_t new_cap)
 {
+    if(!s) return NULL;
     size_t s_len = dstrlen(s);
 
     if (new_cap <= dstrcap(s))
@@ -353,6 +349,7 @@ dstr dstrreserve(dstr s, size_t new_cap)
 // strcmp
 inline _Bool dstrcmp(dstr s1, dstr s2)
 {
+    if(!s1 || !s2) return 0;
     if (dstrlen(s1) != dstrlen(s2))
         return 0;
 
@@ -469,6 +466,7 @@ static dstr _dstrnew_allocator(enum dstrhd_type t, const char* msg, size_t s_len
 
 dstr dstrnew_base(const char* msg)
 {
+    if(!msg) return NULL;
     size_t s_len = strlen(msg);
     size_t alloc_size = s_len+1;
 
@@ -479,6 +477,7 @@ dstr dstrnew_base(const char* msg)
 
 dstr dstrnew_custom(const char* msg, size_t cap)
 {
+    if(!msg) return NULL;
     size_t s_len = strlen(msg);
     size_t alloc_size = (s_len > cap) ? (s_len + 1) : cap;
 
@@ -491,6 +490,7 @@ dstr dstrnew_custom(const char* msg, size_t cap)
 // strfree
 void dstrfree(dstr s)
 {
+    if(!s) return;
     enum dstrhd_type t = s[-1];
 
     switch(t) {
