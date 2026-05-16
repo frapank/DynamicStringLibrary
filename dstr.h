@@ -43,15 +43,15 @@ typedef char* dstr;
 
 // Functions
 #ifdef DSTR_SHORTCUT
-    inline void _dstr_autofree(dstr* s);
+    void _dstr_autofree(dstr* s);
 #endif
 
 size_t dstrlen(dstr s) W_UNUSED_RESULT;
 size_t dstrcap(dstr s) W_UNUSED_RESULT;
 
-inline dstr dstrdup(dstr s) W_UNUSED_RESULT;
-inline void dstrclear(dstr s);
-inline _Bool dstrcmp(dstr s1, dstr s2) W_UNUSED_RESULT;
+dstr dstrdup(dstr s) W_UNUSED_RESULT;
+void dstrclear(dstr s);
+_Bool dstrcmp(dstr s1, dstr s2) W_UNUSED_RESULT;
 dstr dstrreserve(dstr s, size_t new_cap) W_UNUSED_RESULT;
 
 dstr dstrcat_base(dstr s1, const char* s2) W_UNUSED_RESULT;
@@ -349,7 +349,7 @@ dstr dstrreserve(dstr s, size_t new_cap)
 }
 
 // strcmp
-inline _Bool dstrcmp(dstr s1, dstr s2)
+_Bool dstrcmp(dstr s1, dstr s2)
 {
     if(!s1 || !s2) return 0;
     if (dstrlen(s1) != dstrlen(s2))
