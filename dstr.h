@@ -190,12 +190,14 @@ static inline void _dstr_set_cap(void* hd,
 #endif
 
 // Autofree
+#ifdef DSTR_SHORTCUT
 #define dstrauto __attribute__((cleanup(_dstr_autofree))) dstr
 
 void _dstr_autofree(dstr* s)
 {
     if (*s) dstrfree(*s);
 }
+#endif
 
 // strlen
 size_t dstrlen(dstr s)
