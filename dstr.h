@@ -328,6 +328,8 @@ dstr dstrreserve(dstr s, size_t new_cap)
         _dstr_set_len(new_hd, s_len, new_type);
         _dstr_set_cap(new_hd, new_cap, new_type);
 
+         *((uint8_t*)new_hd + new_hd_size - 1) = (uint8_t)new_type;
+
         return s;
     }  
     
