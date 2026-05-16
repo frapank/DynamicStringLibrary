@@ -22,6 +22,7 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 /* Public */
 #define GET_DSTRNEW(_1, _2, NAME, ...) NAME
@@ -52,7 +53,7 @@ size_t dstrcap(dstr s) W_UNUSED_RESULT;
 dstr dstrdup(dstr s) W_UNUSED_RESULT;
 void dstrclear(dstr s);
 void dstrzero(dstr s);
-_Bool dstrcmp(dstr s1, dstr s2) W_UNUSED_RESULT;
+bool dstrcmp(dstr s1, dstr s2) W_UNUSED_RESULT;
 dstr dstrreserve(dstr s, size_t new_cap) W_UNUSED_RESULT;
 
 dstr dstrcat_base(dstr s1, const char* s2) W_UNUSED_RESULT;
@@ -382,12 +383,12 @@ dstr dstrreserve(dstr s, size_t new_cap)
 }
 
 // strcmp
-_Bool dstrcmp(dstr s1, dstr s2)
+bool dstrcmp(dstr s1, dstr s2)
 {
-    if(!s1 || !s2) return 0;
+    if(!s1 || !s2) return false;
     size_t s1_len = dstrlen(s1);
     if (s1_len != dstrlen(s2))
-        return 0;
+        return false;
 
     return memcmp(s1, s2, s1_len) == 0;
 }
