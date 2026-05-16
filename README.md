@@ -96,13 +96,21 @@ dstrclear(s);
 
 Resets the string content without freeing the allocation.
 
+### Zero
+
+```c
+dstrzero(s);
+```
+
+Resets `len` to zero and zeroes the entire buffer with `memset`. Use this when the previous content must not remain readable in memory.
+
 ### Compare
 
 ```c
 if (dstrcmp(s1, s2)) { ... }
 ```
 
-Returns `1` if the strings are equal, `0` otherwise. Both arguments must be `dstr`. For `dstr` vs `char*` comparisons use `strcmp` directly.
+Returns `true` if the strings are equal, `false` otherwise. Both arguments must be `dstr`. For `dstr` vs `char*` comparisons use `strcmp` directly.
 
 ### Free
 
