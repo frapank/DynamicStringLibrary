@@ -10,7 +10,7 @@
 #error "Unsupported compiler, DynamicStringLibrary supports only gcc and clang"
 #endif
 #if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
-#error "DynamicStringLibrary supporto only C11+ versions"
+#error "DynamicStringLibrary supports only C11+ versions"
 #endif
 #if !defined(__x86_64__) && !defined(_M_X64) && \
     !defined(__i386__) && !defined(_M_IX86) && \
