@@ -361,6 +361,7 @@ static dstr _dstr_concat_impl(dstr s1, size_t s1_len,
                                const char* s2, size_t s2_len,
                                size_t cap)
 {
+    if (s2_len > SIZE_MAX - s1_len) return NULL;
     size_t new_len = s1_len + s2_len;
     s1 = dstrreserve(s1, cap);
     if (!s1) return NULL;
