@@ -352,10 +352,11 @@ dstr dstrreserve(dstr s, size_t new_cap)
 _Bool dstrcmp(dstr s1, dstr s2)
 {
     if(!s1 || !s2) return 0;
-    if (dstrlen(s1) != dstrlen(s2))
+    size_t s1_len = dstrlen(s1);
+    if (s1_len != dstrlen(s2))
         return 0;
 
-    return memcmp(s1, s2, dstrlen(s1)) == 0;
+    return memcmp(s1, s2, s1_len) == 0;
 }
 
 // strcat & strappend
