@@ -178,6 +178,33 @@ static inline void _dstr_set_cap(void* hd,
     }
 }
 
+static inline void* _dstr_get_hdr_and_type(dstr s, enum dstrhd_type* t_out)
+{
+    if (!s) return NULL;
+
+    enum dstrhd_type t = DSTRGETTYPE(s);
+
+    if (t_out)
+        *t_out = t;
+
+    switch (t) {
+        case DSTRHD_TYPE_8:
+            return DSTRGETHDR(8, s);
+
+        case DSTRHD_TYPE_16:
+            return DSTRGETHDR(16, s);
+
+        case DSTRHD_TYPE_32:
+            return DSTRGETHDR(32, s);
+
+        case DSTRHD_TYPE_64:
+            return DSTRGETHDR(64, s);
+
+        default:
+            return NULL;
+    }
+}
+
 // Shortcut
 #ifdef DSTR_SHORTCUT
 #   define GET_DOLLAR(_1,_2,NAME,...) NAME
@@ -276,19 +303,22 @@ dstr dstrdup(dstr s)
     return (char*)new_hd + hd_size;
 }
 
-// strclear
+// dstrclear
 void dstrclear(dstr s)
 {
-    if(!s) return;
-    enum dstrhd_type t = DSTRGETTYPE(s);
-    void* hd = NULL;
+    enum dstrhd_type t;
+    void* hd = _dstr_get_hdr_and_type(s, &t);
 
-    switch(t) {
-        case DSTRHD_TYPE_8: hd = DSTRGETHDR(8, s); break;
-        case DSTRHD_TYPE_16: hd = DSTRGETHDR(16, s); break;
-        case DSTRHD_TYPE_32: hd = DSTRGETHDR(32, s); break;
-        case DSTRHD_TYPE_64: hd = DSTRGETHDR(64, s); break;
-    }
+    if (!hd) return;
+
+    _dstr_set_len(hd, 0, t);
+}
+
+// dstrzero
+void dstrzero(dstr s)
+{
+    enum dstrhd_type t;
+    void* hd = _dstr_get_hdr_and_type(s, &t);
 
     if (!hd) return;
 
