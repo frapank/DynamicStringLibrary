@@ -386,7 +386,7 @@ dstr dstrcat_base(dstr s1, const char* s2)
     if (!s1 || !s2) return s1;
     size_t s1_len = dstrlen(s1);
     size_t s2_len = strlen(s2);
-    return _dstr_concat_impl(s1, s1_len, s2, s2_len, s1_len + s2_len);
+    return _dstr_concat_impl(s1, s1_len, s2, s2_len, s1_len + s2_len + 1);
 }
 
 dstr dstrcat_custom(dstr s1, const char* s2, size_t cap)
@@ -401,7 +401,7 @@ dstr dstrappend_base(dstr s1, const dstr s2)
     if (!s1 || !s2) return s1;
     size_t s1_len = dstrlen(s1);
     size_t s2_len = dstrlen(s2);
-    return _dstr_concat_impl(s1, s1_len, s2, s2_len, s1_len + s2_len);
+    return _dstr_concat_impl(s1, s1_len, s2, s2_len, s1_len + s2_len + 1);
 }
 
 dstr dstrappend_custom(dstr s1, const dstr s2, size_t cap)
