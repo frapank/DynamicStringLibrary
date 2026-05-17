@@ -302,7 +302,7 @@ dstr dstrreserve(dstr s, size_t new_cap)
 }
 
 // strcmp
-bool dstrcmp(dstr s1, dstr s2)
+bool dstrequal(dstr s1, dstr s2)
 {
     if(!s1 || !s2) return false;
     size_t s1_len = dstrlen(s1);

@@ -107,7 +107,7 @@ Resets `len` to zero and zeroes the entire buffer with `memset`. Use this when t
 ### Compare
 
 ```c
-if (dstrcmp(s1, s2)) { ... }
+if (dstrequal(s1, s2)) { ... }
 ```
 
 Returns `true` if the strings are equal, `false` otherwise. Both arguments must be `dstr`. For `dstr` vs `char*` comparisons use `strcmp` directly.

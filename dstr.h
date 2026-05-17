@@ -46,7 +46,7 @@ size_t dstrcap(dstr s) W_UNUSED_RESULT;
 dstr dstrdup(dstr s) W_UNUSED_RESULT;
 void dstrclear(dstr s);
 void dstrzero(dstr s);
-bool dstrcmp(dstr s1, dstr s2) W_UNUSED_RESULT;
+bool dstrequal(dstr s1, dstr s2) W_UNUSED_RESULT;
 dstr dstrreserve(dstr s, size_t new_cap) W_UNUSED_RESULT;
 
 dstr dstrcat_base(dstr s1, const char* s2) W_UNUSED_RESULT;
