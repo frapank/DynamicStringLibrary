@@ -23,7 +23,7 @@ libshared: $(OBJ)
 	@echo "Built shared library: lib$(LIB_NAME).so"
 
 test: libstatic
-	$(CC) $(CFLAGS) $(TEST_FILE) -L. -l$(LIB_NAME) -o tester
+	$(CC) $(CFLAGS) $(TEST_FILE) libdstr.a -o tester
 	@echo "Built tester executable"
 
 clean:
