@@ -232,6 +232,7 @@ void dstrclear(dstr s)
     if (!hd) return;
 
     _dstr_set_len(hd, 0, t);
+    s[0] = '\0';
 }
 
 // dstrzero
