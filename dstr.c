@@ -9,6 +9,8 @@
 #include <string.h>
 #include <stdint.h>
 
+#include "dstr_options.h"
+
 enum dstrhd_type {
     DSTRHD_TYPE_8 = 0,
     DSTRHD_TYPE_16 = 1,
@@ -210,7 +212,7 @@ dstr dstrdup(dstr s)
     if (!old_hd) return NULL;
 
     size_t hd_size = _dstr_size_by_type(t);
-    void* new_hd = malloc(hd_size + cap);
+    void* new_hd = DSTR_MALLOC(hd_size + cap);
     if (!new_hd) return NULL;
 
     _dstr_set_len(new_hd, len, t);
@@ -270,7 +272,7 @@ dstr dstrreserve(dstr s, size_t new_cap)
     void* old_hd = (char*)s - old_hd_size;
 
     if(old_type == new_type) {
-        void* new_hd = realloc(old_hd, new_hd_size + new_cap);
+        void* new_hd = DSTR_REALLOC(old_hd, new_hd_size + new_cap);
         if(!new_hd) 
             return NULL;
 
@@ -284,7 +286,7 @@ dstr dstrreserve(dstr s, size_t new_cap)
         return s;
     }  
     
-    void* new_hd = malloc(new_hd_size + new_cap);
+    void* new_hd = DSTR_MALLOC(new_hd_size + new_cap);
     if (!new_hd) 
         return NULL;
 
@@ -296,7 +298,7 @@ dstr dstrreserve(dstr s, size_t new_cap)
     char* new_buf = (char*)new_hd + new_hd_size;
     memcpy(new_buf, s, s_len + 1);
 
-    free(old_hd);
+    DSTR_FREE(old_hd);
 
     return new_buf;
 }
@@ -373,7 +375,7 @@ static dstr _dstrnew_allocator(enum dstrhd_type t, const char* msg, size_t s_len
 {
     switch (t) {
         case DSTRHD_TYPE_8: {
-            struct dstrhd8* hd = malloc(sizeof(*hd) + alloc_size);
+            struct dstrhd8* hd = DSTR_MALLOC(sizeof(*hd) + alloc_size);
             if (!hd) return NULL;
 
             hd->cap = (uint8_t)alloc_size;
@@ -385,7 +387,7 @@ static dstr _dstrnew_allocator(enum dstrhd_type t, const char* msg, size_t s_len
         }
 
         case DSTRHD_TYPE_16: {
-            struct dstrhd16* hd = malloc(sizeof(*hd) + alloc_size);
+            struct dstrhd16* hd = DSTR_MALLOC(sizeof(*hd) + alloc_size);
             if (!hd) return NULL;
 
             hd->cap = (uint16_t)alloc_size;
@@ -397,7 +399,7 @@ static dstr _dstrnew_allocator(enum dstrhd_type t, const char* msg, size_t s_len
         }
 
         case DSTRHD_TYPE_32: {
-            struct dstrhd32* hd = malloc(sizeof(*hd) + alloc_size);
+            struct dstrhd32* hd = DSTR_MALLOC(sizeof(*hd) + alloc_size);
             if (!hd) return NULL;
 
             hd->cap = (uint32_t)alloc_size;
@@ -409,7 +411,7 @@ static dstr _dstrnew_allocator(enum dstrhd_type t, const char* msg, size_t s_len
         }
 
         case DSTRHD_TYPE_64: {
-            struct dstrhd64* hd = malloc(sizeof(*hd) + alloc_size);
+            struct dstrhd64* hd = DSTR_MALLOC(sizeof(*hd) + alloc_size);
             if (!hd) return NULL;
 
             hd->cap = (uint64_t)alloc_size;
