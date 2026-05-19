@@ -61,13 +61,15 @@ dstr dstrnew_custom(const char* msg, size_t cap) W_UNUSED_RESULT;
 void dstrfree(dstr s);
 
 // Shortcut
-#define GET_DOLLAR(_1,_2,NAME,...) NAME
-#define $(...) \
-    GET_DOLLAR(__VA_ARGS__, $_custom, $_base)(__VA_ARGS__)
-#define $_base(str) \
-    dstrnew_base(str)
-#define $_custom(str, cap) \
-    dstrnew_custom(str, cap)
+#ifdef DSTR_SHORTCUT
+    #define GET_DOLLAR(_1,_2,NAME,...) NAME
+    #define $(...) \
+        GET_DOLLAR(__VA_ARGS__, $_custom, $_base)(__VA_ARGS__)
+    #define $_base(str) \
+        dstrnew_base(str)
+    #define $_custom(str, cap) \
+        dstrnew_custom(str, cap)
+#endif
 
 #define dstrauto __attribute__((cleanup(_dstr_autofree))) dstr
 static inline void _dstr_autofree(dstr* s)

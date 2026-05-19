@@ -10,6 +10,6 @@
 #define DSTR_FREE(s)        free(s)
 
 // Enable $("text", size); syntax for strings
-#define DSTR_SHORTCUT       1
+#define DSTR_SHORTCUT
 
 #endif
