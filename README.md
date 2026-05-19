@@ -120,7 +120,8 @@ dstrfree(s);
 
 ## Automatic cleanup
 
-When `DSTR_SHORTCUT` is defined, `dstrauto` declares a `dstr` with `__attribute__((cleanup))` — the string is freed automatically when it goes out of scope:
+`dstrauto` declares a `dstr` with `__attribute__((cleanup))`.  
+the string is freed automatically when it goes out of scope:
 
 ```c
 dstrauto dstr s = dstrnew("hello");
@@ -128,7 +129,7 @@ dstrauto dstr s = dstrnew("hello");
 
 ## Shortcut macro
 
-When `DSTR_SHORTCUT` is defined, `$()` works as an alias for `dstrnew`:
+When `DSTR_SHORTCUT` is defined in `dstr_option.h', `$()` works as an alias for `dstrnew`:
 
 ```c
 #define DSTR_SHORTCUT
