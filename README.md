@@ -2,17 +2,51 @@
 
 ## Overview
 
-dstr is a header-only dynamic string library for C (C11+). It exposes a `char*` interface backed by a hidden allocation header that stores length and capacity. Strings are heap-allocated and may be reallocated automatically during operations.
+dstr is a dynamic string library for C (C11+). It exposes a `char*` interface backed by a hidden allocation header that stores length and capacity. Strings are heap-allocated and may be reallocated automatically during operations.
 
 Requires gcc or clang. Supported architectures: x86, x86-64, ARM, ARM64.
 
 ## Build
 
-Define the implementation once in a single translation unit:
+The library ships as two files: `dstr.h` and `dstr.c`. Compile and link using the provided Makefile:
+
+```sh
+# Build both static and shared libraries
+make
+
+# Build static library only
+make libstatic
+
+# Build shared library only
+make libshared
+```
+
+This produces `libdstr.a` and `libdstr.so`. Link against whichever suits your project:
+
+```sh
+cc -std=c11 your_file.c libdstr.a -o your_program
+```
+
+## Configuration
+
+`dstr_options.h` is included by `dstr.c` and is the single place to configure the library. Create it in the same directory as `dstr.c` before building. Available options:
+
+**Custom allocator** — override the default `malloc`, `realloc`, and `free`:
 
 ```c
-#define DSTR_IMPLEMENTATION
-#include "dstr.h"
+// dstr_options.h
+#define DSTR_MALLOC(sz)        my_malloc(sz)
+#define DSTR_REALLOC(ptr, sz)  my_realloc(ptr, sz)
+#define DSTR_FREE(ptr)         my_free(ptr)
+```
+
+If not defined, these fall back to the standard allocators.
+
+**Shortcut macro** — enable the `$()` alias for `dstrnew`:
+
+```c
+// dstr_options.h
+#define DSTR_SHORTCUT
 ```
 
 ## Types
@@ -42,10 +76,10 @@ Header sizes grow with string capacity:
 
 ```c
 dstr s = dstrnew("hello");
-dstr s = dstrnew("hello", 64); // 64 capacity
+dstr s = dstrnew("hello", 64); // pre-allocate 64 bytes of capacity
 ```
 
-If a capacity is provided and is smaller than the string length, it is automatically increased to fit. The allocation size matches the string length plus null terminator when no capacity is given.
+If a capacity is provided and is smaller than the string length, it is automatically increased to fit. When no capacity is given, the allocation matches the string length plus null terminator.
 
 ### Length and capacity
 
@@ -60,7 +94,7 @@ Both return `size_t`.
 
 ```c
 s = dstrcat(s, "world");
-s = dstrcat(s, "world", 128); // 128 capacity
+s = dstrcat(s, "world", 128); // hint a capacity of 128 bytes
 ```
 
 The first argument must be a `dstr`. The second is a `const char*`. Use `dstrappend` when the second argument is also a `dstr`.
@@ -69,7 +103,7 @@ The first argument must be a `dstr`. The second is a `const char*`. Use `dstrapp
 
 ```c
 s = dstrappend(s, s2);
-s = dstrappend(s, s2, 128); // 128 capacity
+s = dstrappend(s, s2, 128); // hint a capacity of 128 bytes
 ```
 
 Both arguments must be `dstr`. Passing a `char*` as the second argument is not supported.
@@ -80,7 +114,7 @@ Both arguments must be `dstr`. Passing a `char*` as the second argument is not s
 s = dstrreserve(s, 256);
 ```
 
-Grows the allocation to at least `new_cap`. No-op if current capacity is already sufficient. The returned pointer must be reassigned as the buffer may move during reallocation. If the header type changes due to the new size, a new allocation is made and the old one is freed.
+Grows the allocation to at least `new_cap`. No-op if the current capacity is already sufficient. The returned pointer must be reassigned as the buffer may move during reallocation. If the header type changes due to the new size, a new allocation is made and the old one is freed.
 
 ### Duplicate
 
@@ -94,7 +128,7 @@ dstr copy = dstrdup(s);
 dstrclear(s);
 ```
 
-Resets the string content without freeing the allocation.
+Resets `len` to zero and writes a null terminator without freeing the allocation. Previous content beyond the null terminator remains in memory.
 
 ### Zero
 
@@ -121,7 +155,7 @@ dstrfree(s);
 ## Automatic cleanup
 
 `dstrauto` declares a `dstr` with `__attribute__((cleanup))`.  
-the string is freed automatically when it goes out of scope:
+The string is freed automatically when it goes out of scope:
 
 ```c
 dstrauto dstr s = dstrnew("hello");
@@ -129,10 +163,14 @@ dstrauto dstr s = dstrnew("hello");
 
 ## Shortcut macro
 
-When `DSTR_SHORTCUT` is defined in `dstr_option.h', `$()` works as an alias for `dstrnew`:
+When `DSTR_SHORTCUT` is defined in `dstr_options.h`, `$()` works as an alias for `dstrnew`:
 
 ```c
+// dstr_options.h
 #define DSTR_SHORTCUT
+```
+
+```c
 #include "dstr.h"
 
 dstr s = $("hello");
