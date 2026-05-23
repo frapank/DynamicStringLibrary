@@ -197,31 +197,22 @@ dstr dstrdup(dstr s)
 {
     if (!s) return NULL;
 
-    enum dstrhd_type t = DSTRGETTYPE(s);
-    size_t len = dstrlen(s);
-    size_t cap = dstrcap(s);
-
-    void* old_hd = NULL;
-    switch (t) {
-        case DSTRHD_TYPE_8:  old_hd = DSTRGETHDR(8, s);  break;
-        case DSTRHD_TYPE_16: old_hd = DSTRGETHDR(16, s); break;
-        case DSTRHD_TYPE_32: old_hd = DSTRGETHDR(32, s); break;
-        case DSTRHD_TYPE_64: old_hd = DSTRGETHDR(64, s); break;
-    }
-
+    enum dstrhd_type t;
+    void* old_hd = _dstr_get_hdr_and_type(s, &t);
     if (!old_hd) return NULL;
 
+    size_t len = dstrlen(s);
+    size_t cap = dstrcap(s);
     size_t hd_size = _dstr_size_by_type(t);
+
     void* new_hd = DSTR_MALLOC(hd_size + cap);
     if (!new_hd) return NULL;
 
     _dstr_set_len(new_hd, len, t);
     _dstr_set_cap(new_hd, cap, t);
-
     *((uint8_t*)new_hd + hd_size - 1) = (uint8_t)t;
 
     memcpy((char*)new_hd + hd_size, s, len + 1);
-
     return (char*)new_hd + hd_size;
 }
 
