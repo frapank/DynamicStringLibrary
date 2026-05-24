@@ -21,6 +21,8 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#define DSTR_SHORTCUT_ENABLED 0 // 1 enabled | 0 disabled
+
 /* Public */
 #define GET_DSTRNEW(_1, _2, NAME, ...) NAME
 #define dstrnew(...) \
@@ -60,8 +62,11 @@ dstr dstrnew_custom(const char* msg, size_t cap) W_UNUSED_RESULT;
 
 void dstrfree(dstr s);
 
-// Shortcut
-#ifdef DSTR_SHORTCUT
+// Auto cleanup type
+#define dstrauto __attribute__((cleanup(_dstr_autofree))) dstr
+static inline void _dstr_autofree(dstr* s){if (*s) dstrfree(*s);}
+
+#if DSTR_SHORTCUT_ENABLED
     #define GET_DOLLAR(_1,_2,NAME,...) NAME
     #define $(...) \
         GET_DOLLAR(__VA_ARGS__, $_custom, $_base)(__VA_ARGS__)
@@ -70,12 +75,6 @@ void dstrfree(dstr s);
     #define $_custom(str, cap) \
         dstrnew_custom(str, cap)
 #endif
-
-#define dstrauto __attribute__((cleanup(_dstr_autofree))) dstr
-static inline void _dstr_autofree(dstr* s)
-{
-    if (*s) dstrfree(*s);
-}
 
 #endif
 

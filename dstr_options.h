@@ -9,7 +9,4 @@
 #define DSTR_REALLOC(p, s)  realloc(p, s)
 #define DSTR_FREE(s)        free(s)
 
-// Enable $("text", size); syntax for strings
-#define DSTR_SHORTCUT
-
 #endif
