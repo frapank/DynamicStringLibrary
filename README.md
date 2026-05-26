@@ -42,13 +42,6 @@ cc -std=c11 your_file.c libdstr.a -o your_program
 
 If not defined, these fall back to the standard allocators.
 
-**Shortcut macro** — enable the `$()` alias for `dstrnew`:
-
-```c
-// dstr_options.h
-#define DSTR_SHORTCUT
-```
-
 ## Types
 
 `dstr` is a `char*`. The internal headers (`dstrhd8`, `dstrhd16`, `dstrhd32`, `dstrhd64`) are implementation details and not part of the public API. The header type used for a given string is selected automatically based on the required capacity.
@@ -163,7 +156,7 @@ dstrauto dstr s = dstrnew("hello");
 
 ## Shortcut macro
 
-When `DSTR_SHORTCUT` is defined in `dstr_options.h`, `$()` works as an alias for `dstrnew`:
+`$()` can be enabled by changing `DSTR_SHORTCUT_ENABLE` in `dstr.h`. It works as an alias for `dstrnew`:
 
 ```c
 // dstr_options.h
