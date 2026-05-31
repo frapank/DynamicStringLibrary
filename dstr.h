@@ -27,6 +27,10 @@
 #define dstrnew(...) \
     GET_DSTRNEW(__VA_ARGS__, dstrnew_custom, dstrnew_base)(__VA_ARGS__)
 
+#define GET_DSTRPUSH(_1,_2,_3,NAME,...) NAME
+#define dstrpush(...) \
+    GET_DSTRAPPEND(__VA_ARGS__, dstrpush_custom, dstrpush_base)(__VA_ARGS__)
+
 #define GET_DSTRCAT(_1,_2,_3,NAME,...) NAME
 #define dstrcat(...) \
     GET_DSTRCAT(__VA_ARGS__, dstrcat_custom, dstrcat_base)(__VA_ARGS__)
@@ -106,6 +110,18 @@ bool dstrequal(dstr s1, dstr s2) W_UNUSED_RESULT;
  * pointer.  Returns NULL on failure, leaving the original allocation intact.
  */
 dstr dstrreserve(dstr s, size_t new_cap) W_UNUSED_RESULT;
+
+/*
+ * dstrpush(s1, c)
+ * dstrpush(s1, c, cap)
+ *
+ * Append a single character to the end of a dynamic dstr. No-op if the current
+ * capacity is already sufficient.  May reallocate; always use the returned
+ * pointer.  Returns NULL on failure, leaving the original allocation intact.
+ *
+ */
+dstr dstrpush_base(dstr s1, const char c);
+dstr dstrpush_custom(dstr s1, const char c, size_t cap);
 
 /*
  * dstrcat(s1, s2)
