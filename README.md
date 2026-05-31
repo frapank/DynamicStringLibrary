@@ -180,7 +180,6 @@ dstr s = $("hello", 64);
 
 - **dstrinsert** — insert substring at a given index
 - **dstrfind** — find first or last occurrence of a char or substring
-- **dstrpush** — append a single byte with amortized growth
 - **dstrtrim** — strip leading/trailing whitespace or a given charset
 - **dstrrange** — return a substring by start/end index
 - **dstrsplit** — split by delimiter into an array of `dstr`
