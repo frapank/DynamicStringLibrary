@@ -346,6 +346,36 @@ dstr dstrcat_custom(dstr s1, const char* s2, size_t cap)
     return _dstr_concat_impl(s1, dstrlen(s1), s2, strlen(s2), cap);
 }
 
+// strpush
+dstr dstrpush_custom(dstr s1, const char c, size_t cap)
+{
+    if(cap == 0 || !s1) return s1;
+
+    size_t s1_len = dstrlen(s1);
+    size_t s1_cap = dstrcap(s1);
+
+    if(cap <= s1_cap) cap = s1_cap+1;
+
+    if(s1_cap <= s1_len + 1) {
+        s1 = dstrreserve(s1, cap);
+        if(!s1) return NULL;
+    }
+
+    enum dstrhd_type s1_type;
+    void* s1_hd = _dstr_get_hdr_and_type(s1, &s1_type);
+
+    s1[s1_len] = c;
+    s1[s1_len+1] = '\0';
+    _dstr_set_len(s1_hd, s1_len + 1, s1_type);
+
+    return s1;
+}
+
+dstr dstrpush_base(dstr s1, const char c)
+{
+    return dstrpush_custom(s1, c, dstrcap(s1)+1);
+}
+
 // strappend
 dstr dstrappend_base(dstr s1, const dstr s2)
 {
