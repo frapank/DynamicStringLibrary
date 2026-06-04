@@ -1,0 +1,25 @@
+
+name: DynamicStringLibrary
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Compile Library (Static & Shared)
+      run: make
+
+    - name: Build Test Executable
+      run: make test
+
+    - name: Run Unit Tests
+      run: ./tester
