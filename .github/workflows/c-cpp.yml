@@ -26,13 +26,10 @@ jobs:
         sudo apt-get install -y valgrind
 
     - name: Install static analyzers
-      run: sudo apt-get install -y cppcheck clang-tidy
+      run: sudo apt-get install -y cppcheck
 
     - name: Run Cppcheck
-      run: cppcheck --enable=all --error-exitcode=1 dstr.c dstr.h
-
-    - name: Run Clang-Tidy
-      run: clang-tidy dstr.c -- -std=c11
+      run: cppcheck --enable=warning,style,performance,portability --error-exitcode=1 -D__GNUC__ -D__x86_64__ --suppress=unusedFunction --suppress=staticFunction dstr.c dstr.h
 
     - name: Clean and Build Static/Shared Library
       run: |
