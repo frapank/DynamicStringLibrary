@@ -29,7 +29,7 @@ jobs:
       run: sudo apt-get install -y cppcheck
 
     - name: Run Cppcheck
-      run: cppcheck --enable=warning,style,performance,portability --error-exitcode=1 -D__GNUC__ -D__x86_64__ --suppress=unusedFunction --suppress=staticFunction dstr.c dstr.h
+      run: make cppcheck
 
     - name: Clean and Build Static/Shared Library
       run: |
