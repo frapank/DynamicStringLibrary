@@ -25,6 +25,15 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y valgrind
 
+    - name: Install static analyzers
+      run: sudo apt-get install -y cppcheck clang-tidy
+
+    - name: Run Cppcheck
+      run: cppcheck --enable=all --error-exitcode=1 dstr.c dstr.h
+
+    - name: Run Clang-Tidy
+      run: clang-tidy dstr.c -- -std=c11
+
     - name: Clean and Build Static/Shared Library
       run: |
         make clean
