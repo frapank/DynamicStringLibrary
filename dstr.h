@@ -120,8 +120,8 @@ dstr dstrreserve(dstr s, size_t new_cap) W_UNUSED_RESULT;
  * pointer.  Returns NULL on failure, leaving the original allocation intact.
  *
  */
-dstr dstrpush_base(dstr s1, const char c);
-dstr dstrpush_custom(dstr s1, const char c, size_t cap);
+dstr dstrpush_base(dstr s1, const char c) W_UNUSED_RESULT;
+dstr dstrpush_custom(dstr s1, const char c, size_t cap) W_UNUSED_RESULT;
 
 /*
  * dstrcat(s1, s2)
