@@ -29,7 +29,7 @@
 
 #define GET_DSTRPUSH(_1,_2,_3,NAME,...) NAME
 #define dstrpush(...) \
-    GET_DSTRAPPEND(__VA_ARGS__, dstrpush_custom, dstrpush_base)(__VA_ARGS__)
+    GET_DSTRPUSH(__VA_ARGS__, dstrpush_custom, dstrpush_base)(__VA_ARGS__)
 
 #define GET_DSTRCAT(_1,_2,_3,NAME,...) NAME
 #define dstrcat(...) \
