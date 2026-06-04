@@ -29,4 +29,5 @@ test: libstatic
 clean:
 	rm -f *.o *.a *.so *.out tester
 
-
+cppcheck:
+	cppcheck --enable=warning,style,performance,portability --error-exitcode=1 -D__GNUC__ -D__x86_64__ --suppress=unusedFunction --suppress=staticFunction dstr.c dstr.h
