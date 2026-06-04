@@ -324,7 +324,7 @@ static dstr _dstr_concat_impl(dstr s1, size_t s1_len,
         case DSTRHD_TYPE_16: hd = DSTRGETHDR(16, s1); break;
         case DSTRHD_TYPE_32: hd = DSTRGETHDR(32, s1); break;
         case DSTRHD_TYPE_64: hd = DSTRGETHDR(64, s1); break;
-        default: NULL;
+        default: return NULL;
     }
     memcpy(s1 + s1_len, s2, s2_len);
     s1[new_len] = '\0';
