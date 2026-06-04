@@ -1,5 +1,4 @@
-
-name: DynamicStringLibrary
+name: DynamicStringLibrary Build
 
 on:
   push:
@@ -7,19 +6,41 @@ on:
   pull_request:
     branches: [ "main" ]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
-  build:
+  test-and-sanitize:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Compile Library (Static & Shared)
-      run: make
+    - name: Install Valgrind
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y valgrind
 
-    - name: Build Test Executable
-      run: make test
+    - name: Clean and Build Static/Shared Library
+      run: |
+        make clean
+        make all CC=${{ matrix.compiler }}
 
-    - name: Run Unit Tests
+    - name: Build Standard Tester
+      run: make test CC=${{ matrix.compiler }}
+
+    - name: Run Standard Suite
       run: ./tester
+
+    - name: Build & Run with AddressSanitizer
+      run: |
+        ${{ matrix.compiler }} -std=c11 -Wall -Wextra -fsanitize=address,undefined tester.c dstr.c -o tester_asan
+        ./tester_asan
+
+    - name: Run Valgrind Memory Leak Check
+      run: |
+        valgrind --leak-check=full --show-leak-kinds=all --error-exitcode=1 ./tester
