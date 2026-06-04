@@ -198,7 +198,7 @@ dstr dstrdup(dstr s)
     if (!s) return NULL;
 
     enum dstrhd_type t;
-    void* old_hd = _dstr_get_hdr_and_type(s, &t);
+    const void* old_hd = _dstr_get_hdr_and_type(s, &t);
     if (!old_hd) return NULL;
 
     size_t len = dstrlen(s);
