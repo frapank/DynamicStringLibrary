@@ -43,10 +43,7 @@ jobs:
       run: ./tester
 
     - name: Build & Run with AddressSanitizer
-      run: |
-        ${{ matrix.compiler }} -std=c11 -Wall -Wextra -fsanitize=address,undefined tester.c dstr.c -o tester_asan
-        ./tester_asan
+      run: make run_asan CC=${{ matrix.compiler }}
 
     - name: Run Valgrind Memory Leak Check
-      run: |
-        valgrind --leak-check=full --show-leak-kinds=all --error-exitcode=1 ./tester
+      run: make valgrind CC=${{ matrix.compiler }}
