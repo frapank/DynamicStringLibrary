@@ -4,3 +4,4 @@
 *.so
 tags
 tester
+tester_asan
