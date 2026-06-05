@@ -1,33 +1,62 @@
 CC      := cc
-CFLAGS  := -std=c11 -Wall -Wextra -O2
-LDFLAGS :=
-TEST_FILE := tester.c
+CFLAGS  := -g -std=c11 -Wall -Wextra -O2
+SAN_CFLAGS := -std=c11 -Wall -Wextra -g -fsanitize=address,undefined
+
 LIB_NAME := dstr
+TARGET_STATIC := lib$(LIB_NAME).a
+TARGET_SHARED := lib$(LIB_NAME).so
 
-SRC := dstr.c
-OBJ := $(SRC:.c=.o)
+HEADER := $(LIB_NAME).h
+SRC    := $(LIB_NAME).c
+OBJ    := $(SRC:.c=.o)
 
-.PHONY: all clean test
+TEST_FILE := tester.c
+TEST_EXEC := tester
+TEST_ASAN_EXEC := tester_asan
 
-all: libstatic libshared
+.PHONY: all clean test cppcheck sanitize run_asan
+
+all: $(TARGET_STATIC) $(TARGET_SHARED)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -fPIC -c $< -o $@
 
-libstatic: $(OBJ)
-	ar rcs lib$(LIB_NAME).a $(OBJ)
-	@echo "Built static library: lib$(LIB_NAME).a"
+$(TARGET_STATIC): $(OBJ)
+	ar rcs $@ $(OBJ)
+	@echo "Built static library: $@"
 
-libshared: $(OBJ)
-	$(CC) -shared -o lib$(LIB_NAME).so $(OBJ)
-	@echo "Built shared library: lib$(LIB_NAME).so"
+$(TARGET_SHARED): $(OBJ)
+	$(CC) -shared -o $@ $(OBJ)
+	@echo "Built shared library: $@"
 
-test: libstatic
-	$(CC) $(CFLAGS) $(TEST_FILE) libdstr.a -o tester
+test: $(TARGET_STATIC)
+	$(CC) $(CFLAGS) $(TEST_FILE) $(TARGET_STATIC) -o $(TEST_EXEC)
 	@echo "Built tester executable"
 
-clean:
-	rm -f *.o *.a *.so *.out tester
+run_test: test
+	./$(TEST_EXEC)
+
+valgrind: test
+	valgrind --leak-check=full \
+	         --show-leak-kinds=all \
+	         --track-origins=yes \
+	         --error-exitcode=1 \
+	         ./$(TEST_EXEC)
+
+sanitize:
+	$(CC) $(SAN_CFLAGS) $(SRC) $(TEST_FILE) -o $(TEST_ASAN_EXEC)
+	@echo "Built tester_asan executable"
+
+run_asan: sanitize
+	ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 ./$(TEST_ASAN_EXEC)
 
 cppcheck:
-	cppcheck --enable=warning,style,performance,portability --error-exitcode=1 -D__GNUC__ -D__x86_64__ --suppress=unusedFunction --suppress=staticFunction dstr.c dstr.h
+	cppcheck --enable=warning,style,performance,portability \
+	         --error-exitcode=1 \
+	         -D__GNUC__ -D__x86_64__ \
+	         --suppress=unusedFunction \
+	         --suppress=staticFunction \
+	         $(SRC) $(HEADER)
+
+clean:
+	rm -f *.o *.a *.so $(TEST_EXEC) $(TEST_ASAN_EXEC)
