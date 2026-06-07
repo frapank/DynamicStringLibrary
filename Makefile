@@ -57,6 +57,8 @@ cppcheck:
 	         --suppress=unusedFunction \
 	         --suppress=staticFunction \
 	         $(SRC) $(HEADER)
+format:
+	clang-format -i $(HEADER) $(SRC)
 
 clean:
 	rm -f *.o *.a *.so $(TEST_EXEC) $(TEST_ASAN_EXEC)
