@@ -12,38 +12,36 @@
 #if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
 #error "DynamicStringLibrary supports only C11+ versions"
 #endif
-#if !defined(__x86_64__) && !defined(_M_X64) && \
-    !defined(__i386__) && !defined(_M_IX86) && \
-    !defined(__aarch64__) && !defined(__arm__)
-#error "DynamicStringLibrary supports only common architectures: x86, x86-64, ARM, ARM64"
+#if !defined(__x86_64__) && !defined(_M_X64) && !defined(__i386__) &&          \
+    !defined(_M_IX86) && !defined(__aarch64__) && !defined(__arm__)
+#error                                                                         \
+    "DynamicStringLibrary supports only common architectures: x86, x86-64, ARM, ARM64"
 #endif
 
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #define DSTR_SHORTCUT_ENABLED 0 /* 1 enabled | 0 disabled */
 
 #define GET_DSTRNEW(_1, _2, NAME, ...) NAME
-#define dstrnew(...) \
+#define dstrnew(...)                                                           \
     GET_DSTRNEW(__VA_ARGS__, dstrnew_custom, dstrnew_base)(__VA_ARGS__)
 
-#define GET_DSTRPUSH(_1,_2,_3,NAME,...) NAME
-#define dstrpush(...) \
+#define GET_DSTRPUSH(_1, _2, _3, NAME, ...) NAME
+#define dstrpush(...)                                                          \
     GET_DSTRPUSH(__VA_ARGS__, dstrpush_custom, dstrpush_base)(__VA_ARGS__)
 
-#define GET_DSTRCAT(_1,_2,_3,NAME,...) NAME
-#define dstrcat(...) \
+#define GET_DSTRCAT(_1, _2, _3, NAME, ...) NAME
+#define dstrcat(...)                                                           \
     GET_DSTRCAT(__VA_ARGS__, dstrcat_custom, dstrcat_base)(__VA_ARGS__)
 
-#define GET_DSTRAPPEND(_1,_2,_3,NAME,...) NAME
-#define dstrappend(...) \
+#define GET_DSTRAPPEND(_1, _2, _3, NAME, ...) NAME
+#define dstrappend(...)                                                        \
     GET_DSTRAPPEND(__VA_ARGS__, dstrappend_custom, dstrappend_base)(__VA_ARGS__)
 
-#define W_UNUSED_RESULT \
-    __attribute__((warn_unused_result))
+#define W_UNUSED_RESULT __attribute__((warn_unused_result))
 
 typedef char* dstr;
-
 
 /*
  * dstrnew(msg)
@@ -154,7 +152,11 @@ dstr dstrappend_custom(dstr s1, const dstr s2, size_t cap) W_UNUSED_RESULT;
  *   dstrauto s = dstrnew("hello");
  */
 #define dstrauto __attribute__((cleanup(_dstr_autofree))) dstr
-static inline void _dstr_autofree(dstr* s) { if (*s) dstrfree(*s); }
+static inline void _dstr_autofree(dstr* s)
+{
+    if (*s)
+        dstrfree(*s);
+}
 
 /*
  * $(msg)
@@ -164,14 +166,10 @@ static inline void _dstr_autofree(dstr* s) { if (*s) dstrfree(*s); }
  * in dstr_options.h.
  */
 #if DSTR_SHORTCUT_ENABLED
-    #define GET_DOLLAR(_1,_2,NAME,...) NAME
-    #define $(...) \
-        GET_DOLLAR(__VA_ARGS__, $_custom, $_base)(__VA_ARGS__)
-    #define $_base(str) \
-        dstrnew_base(str)
-    #define $_custom(str, cap) \
-        dstrnew_custom(str, cap)
+#define GET_DOLLAR(_1, _2, NAME, ...) NAME
+#define $(...) GET_DOLLAR(__VA_ARGS__, $_custom, $_base)(__VA_ARGS__)
+#define $_base(str) dstrnew_base(str)
+#define $_custom(str, cap) dstrnew_custom(str, cap)
 #endif
-
 
 #endif
