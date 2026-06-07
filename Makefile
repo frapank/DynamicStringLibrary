@@ -60,5 +60,9 @@ cppcheck:
 format:
 	clang-format -i $(HEADER) $(SRC)
 
+format-check:
+	@diff -u <(clang-format dstr.c) dstr.c || echo "Wrong format in dstr.c, run 'make format'"	
+	@diff -u <(clang-format dstr.h) dstr.h || echo "Wrong format in dstr.h, run 'make format'"	
+
 clean:
 	rm -f *.o *.a *.so $(TEST_EXEC) $(TEST_ASAN_EXEC)
