@@ -61,8 +61,10 @@ format:
 	clang-format -i $(HEADER) $(SRC)
 
 format-check:
-	@diff -u <(clang-format dstr.c) dstr.c || echo "Wrong format in dstr.c, run 'make format'"	
-	@diff -u <(clang-format dstr.h) dstr.h || echo "Wrong format in dstr.h, run 'make format'"	
+	@clang-format dstr.c | diff -u - dstr.c || \
+		(echo "Wrong format in dstr.c, run 'make format'" >&2; exit 1)
+	@clang-format dstr.h | diff -u - dstr.h || \
+		(echo "Wrong format in dstr.h, run 'make format'" >&2; exit 1)
 
 clean:
 	rm -f *.o *.a *.so $(TEST_EXEC) $(TEST_ASAN_EXEC)
