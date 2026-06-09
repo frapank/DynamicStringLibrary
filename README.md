@@ -139,6 +139,15 @@ if (dstrequal(s1, s2)) { ... }
 
 Returns `true` if the strings are equal, `false` otherwise. Both arguments must be `dstr`. For `dstr` vs `char*` comparisons use `strcmp` directly.
 
+### Find substring
+
+```c
+ssize_t index = dstrfind(s, "needle");
+
+```
+
+Searches for the first occurrence of a null-terminated C string (`needle`) inside the dynamic string `s`. Returns the zero-based index of the first match, or `-1` if the substring is not found. It safely returns `-1` if either argument is `NULL`, if the needle is an empty string, or if the needle is longer than the string itself.
+
 ### Free
 
 ```c
