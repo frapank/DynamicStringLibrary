@@ -33,6 +33,51 @@ static int tests_failed = 0;
 
 // --- TEST SUITE ---
 
+static void test_find_basic(void) {
+    dstr s = dstrnew("Hello World");
+
+    ASSERT_TRUE(dstrfind(s, "o W") == 4);
+    ASSERT_TRUE(dstrfind(s, "Hello") == 0);
+    ASSERT_TRUE(dstrfind(s, "World") == 6);
+
+    dstrfree(s);
+}
+
+static void test_find_not_found(void) {
+    dstr s = dstrnew("System Integrity");
+
+    ASSERT_TRUE(dstrfind(s, "Hack") == -1);
+    ASSERT_TRUE(dstrfind(s, "system") == -1);
+
+    dstrfree(s);
+}
+
+static void test_find_edge_cases(void) {
+    dstr s = dstrnew("data");
+
+    ASSERT_TRUE(dstrfind(s, "") == -1);
+    ASSERT_TRUE(dstrfind(s, "database") == -1);
+    ASSERT_TRUE(dstrfind(s, NULL) == -1);
+    ASSERT_TRUE(dstrfind(NULL, "data") == -1);
+
+    dstrfree(s);
+
+    dstr empty = dstrnew("");
+    ASSERT_TRUE(dstrfind(empty, "a") == -1);
+    dstrfree(empty);
+}
+
+static void test_find_overlaps_and_repeats(void) {
+    dstr s = dstrnew("abacadabra");
+
+    ASSERT_TRUE(dstrfind(s, "a") == 0);
+    ASSERT_TRUE(dstrfind(s, "ab") == 0);
+    ASSERT_TRUE(dstrfind(s, "cad") == 3);
+    ASSERT_TRUE(dstrfind(s, "abra") == 6);
+
+    dstrfree(s);
+}
+
 static void test_creation_and_properties(void) {
     dstr s = dstrnew("Hello");
     ASSERT_TRUE(s != NULL);
@@ -93,6 +138,10 @@ static void test_auto_cleanup(void) {
 int main(void) {
     printf("\033[1;34m=== STARTING DSTR UNIT TESTS ===\033[0m\n\n");
 
+    RUN_TEST(test_find_basic);
+    RUN_TEST(test_find_not_found);
+    RUN_TEST(test_find_edge_cases);
+    RUN_TEST(test_find_overlaps_and_repeats);
     RUN_TEST(test_creation_and_properties);
     RUN_TEST(test_capacity_hint);
     RUN_TEST(test_concatenation);
