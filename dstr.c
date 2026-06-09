@@ -152,6 +152,27 @@ static inline void* _dstr_get_hdr_and_type(dstr s, enum dstrhd_type* t_out)
     }
 }
 
+// strfind
+ssize_t dstrfind(dstr s, const char* needle)
+{
+    if (!s || !needle || needle[0] == '\0')
+        return -1;
+
+    size_t len = dstrlen(s);
+    size_t nlen = strlen(needle);
+
+    if (nlen > len)
+        return -1;
+
+    for (size_t i = 0; i <= len - nlen; i++) {
+        if (memcmp(&s[i], needle, nlen) == 0) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
 // strlen
 size_t dstrlen(dstr s)
 {

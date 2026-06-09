@@ -21,6 +21,13 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#ifdef _WIN32
+#include <stddef.h>
+typedef ptrdiff_t ssize_t;
+#else
+#include <sys/types.h>
+#endif
+
 #define DSTR_SHORTCUT_ENABLED 0 /* 1 enabled | 0 disabled */
 
 #define GET_DSTRNEW(_1, _2, NAME, ...) NAME
@@ -69,6 +76,15 @@ dstr dstrdup(dstr s) W_UNUSED_RESULT;
  * Release the memory owned by s.  Passing NULL is a no-op.
  */
 void dstrfree(dstr s);
+
+/*
+ * dstrfind(s, needle)
+ *
+ * Search for the first occurrence of the substring needle inside s.
+ * Returns the index of the first match, or -1 if not found or if
+ * s/needle are NULL or needle is empty.
+ */
+ssize_t dstrfind(dstr s, const char* needle) W_UNUSED_RESULT;
 
 /*
  * dstrlen(s)  - number of characters in s, excluding the null terminator.
