@@ -526,7 +526,7 @@ dstr dstrnew_custom(const char* msg, size_t cap)
     if (!msg)
         return NULL;
     size_t s_len = strlen(msg);
-    size_t alloc_size = (s_len > cap) ? (s_len + 1) : cap;
+    size_t alloc_size = (s_len + 1 > cap) ? (s_len + 1) : cap;
 
     enum dstrhd_type t = _dstr_type_by_size(alloc_size);
 
@@ -538,23 +538,23 @@ void dstrfree(dstr s)
 {
     if (!s)
         return;
-    enum dstrhd_type t = s[-1];
+    enum dstrhd_type t = DSTRGETTYPE(s);
 
     switch (t) {
         case DSTRHD_TYPE_8: {
-            free(DSTRGETHDR(8, s));
+            DSTR_FREE(DSTRGETHDR(8, s));
             return;
         }
         case DSTRHD_TYPE_16: {
-            free(DSTRGETHDR(16, s));
+            DSTR_FREE(DSTRGETHDR(16, s));
             return;
         }
         case DSTRHD_TYPE_32: {
-            free(DSTRGETHDR(32, s));
+            DSTR_FREE(DSTRGETHDR(32, s));
             return;
         }
         case DSTRHD_TYPE_64: {
-            free(DSTRGETHDR(64, s));
+            DSTR_FREE(DSTRGETHDR(64, s));
             return;
         }
     }
