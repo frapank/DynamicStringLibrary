@@ -526,7 +526,7 @@ dstr dstrnew_custom(const char* msg, size_t cap)
     if (!msg)
         return NULL;
     size_t s_len = strlen(msg);
-    size_t alloc_size = (s_len > cap) ? (s_len + 1) : cap;
+    size_t alloc_size = (s_len + 1 > cap) ? (s_len + 1) : cap;
 
     enum dstrhd_type t = _dstr_type_by_size(alloc_size);
 
