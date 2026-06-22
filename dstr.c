@@ -538,7 +538,7 @@ void dstrfree(dstr s)
 {
     if (!s)
         return;
-    enum dstrhd_type t = s[-1];
+    enum dstrhd_type t = DSTRGETTYPE(s);
 
     switch (t) {
         case DSTRHD_TYPE_8: {
