@@ -542,19 +542,19 @@ void dstrfree(dstr s)
 
     switch (t) {
         case DSTRHD_TYPE_8: {
-            free(DSTRGETHDR(8, s));
+            DSTR_FREE(DSTRGETHDR(8, s));
             return;
         }
         case DSTRHD_TYPE_16: {
-            free(DSTRGETHDR(16, s));
+            DSTR_FREE(DSTRGETHDR(16, s));
             return;
         }
         case DSTRHD_TYPE_32: {
-            free(DSTRGETHDR(32, s));
+            DSTR_FREE(DSTRGETHDR(32, s));
             return;
         }
         case DSTRHD_TYPE_64: {
-            free(DSTRGETHDR(64, s));
+            DSTR_FREE(DSTRGETHDR(64, s));
             return;
         }
     }
