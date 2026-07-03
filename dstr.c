@@ -11,46 +11,6 @@
 
 #include "dstr_options.h"
 
-enum dstrhd_type {
-    DSTRHD_TYPE_8 = 0,
-    DSTRHD_TYPE_16 = 1,
-    DSTRHD_TYPE_32 = 2,
-    DSTRHD_TYPE_64 = 3
-};
-
-struct __attribute__((packed)) dstrhd8 {
-    uint8_t len;
-    uint8_t cap; // 255
-    uint8_t type;
-    char buf[];
-};
-
-struct __attribute__((packed)) dstrhd16 {
-    uint16_t len;
-    uint16_t cap; // 65,535
-    uint8_t type;
-    char buf[];
-};
-
-struct __attribute__((packed)) dstrhd32 {
-    uint32_t len;
-    uint32_t cap; // 4,294,967,295
-    uint8_t type;
-    char buf[];
-};
-
-struct __attribute__((packed)) dstrhd64 {
-    uint64_t len;
-    uint64_t cap; // 18,446,744,073,709,551,615
-    uint8_t type;
-    char buf[];
-};
-
-// Utils
-#define DSTRGETHDR(n, s)                                                       \
-    ((struct dstrhd##n*)((char*)(s) - sizeof(struct dstrhd##n)))
-#define DSTRGETTYPE(s) ((uint8_t)((s)[-1]))
-
 static inline enum dstrhd_type _dstr_type_by_size(size_t cap)
 {
     if (cap <= UINT8_MAX)
@@ -319,52 +279,6 @@ void dstrsplitfree(dstr* parts, size_t count)
         dstrfree(parts[i]);
 
     DSTR_FREE(parts);
-}
-
-// strlen
-size_t dstrlen(dstr s)
-{
-    if (!s)
-        return 0;
-    enum dstrhd_type t = DSTRGETTYPE(s);
-    switch (t) {
-        case DSTRHD_TYPE_8: {
-            return DSTRGETHDR(8, s)->len;
-        }
-        case DSTRHD_TYPE_16: {
-            return DSTRGETHDR(16, s)->len;
-        }
-        case DSTRHD_TYPE_32: {
-            return DSTRGETHDR(32, s)->len;
-        }
-        case DSTRHD_TYPE_64: {
-            return DSTRGETHDR(64, s)->len;
-        }
-    }
-    return 0;
-};
-
-// dstrcap
-size_t dstrcap(dstr s)
-{
-    if (!s)
-        return 0;
-    enum dstrhd_type t = DSTRGETTYPE(s);
-    switch (t) {
-        case DSTRHD_TYPE_8: {
-            return DSTRGETHDR(8, s)->cap;
-        }
-        case DSTRHD_TYPE_16: {
-            return DSTRGETHDR(16, s)->cap;
-        }
-        case DSTRHD_TYPE_32: {
-            return DSTRGETHDR(32, s)->cap;
-        }
-        case DSTRHD_TYPE_64: {
-            return DSTRGETHDR(64, s)->cap;
-        }
-    }
-    return 0;
 }
 
 // strdup
