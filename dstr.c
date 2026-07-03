@@ -289,6 +289,34 @@ void dstrzero(dstr s)
     memset(s, 0, cap);
 }
 
+// dstrtolower
+void dstrtolower(dstr s)
+{
+    if (!s)
+        return;
+
+    size_t len = dstrlen(s);
+    for (size_t i = 0; i < len; i++) {
+        unsigned char c = (unsigned char)s[i];
+        if (c >= 'A' && c <= 'Z')
+            s[i] = (char)(c + ('a' - 'A'));
+    }
+}
+
+// dstrtoupper
+void dstrtoupper(dstr s)
+{
+    if (!s)
+        return;
+
+    size_t len = dstrlen(s);
+    for (size_t i = 0; i < len; i++) {
+        unsigned char c = (unsigned char)s[i];
+        if (c >= 'a' && c <= 'z')
+            s[i] = (char)(c - ('a' - 'A'));
+    }
+}
+
 // strreserve
 dstr dstrreserve(dstr s, size_t new_cap)
 {

@@ -117,6 +117,24 @@ void dstrzero(dstr s);
 bool dstrequal(dstr s1, dstr s2) W_UNUSED_RESULT;
 
 /*
+ * dstrtolower(s)
+ *
+ * Convert every ASCII uppercase letter ('A'-'Z') in s to lowercase, in
+ * place. Bytes outside that range, including non-ASCII bytes, are left
+ * untouched. Length and capacity are unchanged. No-op if s is NULL.
+ */
+void dstrtolower(dstr s);
+
+/*
+ * dstrtoupper(s)
+ *
+ * Convert every ASCII lowercase letter ('a'-'z') in s to uppercase, in
+ * place. Bytes outside that range, including non-ASCII bytes, are left
+ * untouched. Length and capacity are unchanged. No-op if s is NULL.
+ */
+void dstrtoupper(dstr s);
+
+/*
  * dstrreserve(s, new_cap)
  *
  * Ensure s has at least new_cap bytes of capacity.  No-op if the current
