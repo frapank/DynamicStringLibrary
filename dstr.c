@@ -152,6 +152,14 @@ static inline void* _dstr_get_hdr_and_type(dstr s, enum dstrhd_type* t_out)
     }
 }
 
+static inline size_t _dstr_grow_cap(size_t old_cap, size_t needed)
+{
+    size_t grown = old_cap < 16 ? 16 : old_cap;
+    if (grown <= SIZE_MAX - grown / 2)
+        grown += grown / 2;
+    return grown > needed ? grown : needed;
+}
+
 // strfind
 ssize_t dstrfind(dstr s, const char* needle)
 {
@@ -164,10 +172,17 @@ ssize_t dstrfind(dstr s, const char* needle)
     if (nlen > len)
         return -1;
 
-    for (size_t i = 0; i <= len - nlen; i++) {
-        if (memcmp(&s[i], needle, nlen) == 0) {
-            return i;
-        }
+    size_t remaining = len - nlen + 1;
+    const char* cursor = s;
+
+    while (remaining > 0) {
+        const char* hit = memchr(cursor, needle[0], remaining);
+        if (!hit)
+            return -1;
+        if (memcmp(hit, needle, nlen) == 0)
+            return hit - s;
+        remaining -= (size_t)(hit - cursor) + 1;
+        cursor = hit + 1;
     }
 
     return -1;
@@ -397,7 +412,8 @@ dstr dstrcat_base(dstr s1, const char* s2)
         return s1;
     size_t s1_len = dstrlen(s1);
     size_t s2_len = strlen(s2);
-    return _dstr_concat_impl(s1, s1_len, s2, s2_len, s1_len + s2_len + 1);
+    size_t cap = _dstr_grow_cap(dstrcap(s1), s1_len + s2_len + 1);
+    return _dstr_concat_impl(s1, s1_len, s2, s2_len, cap);
 }
 
 dstr dstrcat_custom(dstr s1, const char* s2, size_t cap)
@@ -437,7 +453,8 @@ dstr dstrpush_custom(dstr s1, const char c, size_t cap)
 
 dstr dstrpush_base(dstr s1, const char c)
 {
-    return dstrpush_custom(s1, c, dstrcap(s1) + 1);
+    size_t cap = dstrcap(s1);
+    return dstrpush_custom(s1, c, _dstr_grow_cap(cap, cap + 1));
 }
 
 // strappend
@@ -447,7 +464,8 @@ dstr dstrappend_base(dstr s1, const dstr s2)
         return s1;
     size_t s1_len = dstrlen(s1);
     size_t s2_len = dstrlen(s2);
-    return _dstr_concat_impl(s1, s1_len, s2, s2_len, s1_len + s2_len + 1);
+    size_t cap = _dstr_grow_cap(dstrcap(s1), s1_len + s2_len + 1);
+    return _dstr_concat_impl(s1, s1_len, s2, s2_len, cap);
 }
 
 dstr dstrappend_custom(dstr s1, const dstr s2, size_t cap)
