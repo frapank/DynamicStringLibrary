@@ -154,10 +154,22 @@ static inline void* _dstr_get_hdr_and_type(dstr s, enum dstrhd_type* t_out)
 
 static inline size_t _dstr_grow_cap(size_t old_cap, size_t needed)
 {
+    if (needed <= old_cap)
+        return old_cap;
+
+#if DSTR_GROWTH_ENABLED
     size_t grown = old_cap < 16 ? 16 : old_cap;
-    if (grown <= SIZE_MAX - grown / 2)
-        grown += grown / 2;
+
+    if (grown <= SIZE_MAX / DSTR_GROWTH_PERCENT) {
+        size_t increment = grown * DSTR_GROWTH_PERCENT / 100;
+        if (grown <= SIZE_MAX - increment)
+            grown += increment;
+    }
+
     return grown > needed ? grown : needed;
+#else
+    return needed;
+#endif
 }
 
 static inline ssize_t _dstr_find_from(const char* buf,
