@@ -42,6 +42,16 @@ cc -std=c11 your_file.c libdstr.a -o your_program
 
 If not defined, these fall back to the standard allocators.
 
+**Growth strategy** - controls how `dstrcat`, `dstrappend`, and `dstrpush` (the two-argument, non-custom forms) grow the buffer when the current capacity is not enough:
+
+```c
+// dstr_options.h
+#define DSTR_GROWTH_ENABLED 1   /* 1 = amortized growth, 0 = allocate exactly what is needed */
+#define DSTR_GROWTH_PERCENT 50  /* extra capacity added on growth, as a percent of the current capacity */
+```
+
+With `DSTR_GROWTH_ENABLED` set to 1 (the default), a growth only happens when the requested size exceeds the current capacity, and it adds `DSTR_GROWTH_PERCENT` percent of headroom on top (50 means the new capacity is roughly 1.5x the old one), so repeated small appends do not reallocate on every call. Setting it to 0 disables the headroom: every growth allocates exactly what is needed, trading more frequent reallocations for a tighter memory footprint. Either way, capacity is left untouched whenever it is already sufficient. The `_custom` variants of `dstrcat`, `dstrappend`, and `dstrpush`, as well as the `cap` argument of `dstrnew`, always honor the caller-supplied capacity and are not affected by these options.
+
 ## Types
 
 `dstr` is a `char*`. The internal headers (`dstrhd8`, `dstrhd16`, `dstrhd32`, `dstrhd64`) are implementation details and not part of the public API. The header type used for a given string is selected automatically based on the required capacity.
@@ -157,6 +167,28 @@ ssize_t index = dstrfind(s, "needle");
 
 Searches for the first occurrence of a null-terminated C string (`needle`) inside the dynamic string `s`. Returns the zero-based index of the first match, or `-1` if the substring is not found. It safely returns `-1` if either argument is `NULL`, if the needle is an empty string, or if the needle is longer than the string itself.
 
+### Range (substring)
+
+```c
+dstr sub = dstrrange(s, 0, 3);   // first 3 characters
+dstr sub = dstrrange(s, -3, -1); // second-to-last and third-to-last characters
+dstr sub = dstrrange(s, 2, -1);  // from index 2 up to (not including) the last character
+```
+
+Returns a new `dstr` holding the `[start, end)` slice of `s` (`end` is exclusive). Negative indices count from the end of the string, i.e. `-1` is the last character. Out-of-range indices are clamped instead of erroring, and a `start` at or past `end` yields an empty `dstr`. Returns `NULL` only if `s` is `NULL` or allocation fails. Free the result with `dstrfree`.
+
+### Split
+
+```c
+size_t count;
+dstr* parts = dstrsplit(s, ",", &count);
+for (size_t i = 0; i < count; i++)
+    puts(parts[i]);
+dstrsplitfree(parts, count);
+```
+
+Splits `s` on every occurrence of `delim`, returning a newly allocated array of `dstr`. Adjacent or leading/trailing delimiters produce empty (`""`) elements. Returns `NULL` if `s`/`delim` is `NULL`, `delim` is empty, or allocation fails. The array and every element must be released together with `dstrsplitfree`.
+
 ### Free
 
 ```c
@@ -197,10 +229,7 @@ dstr s = $("hello", 64);
 ## Roadmap
 
 - **dstrinsert** — insert substring at a given index
-- **dstrfind** — find first or last occurrence of a char or substring
 - **dstrtrim** — strip leading/trailing whitespace or a given charset
-- **dstrrange** — return a substring by start/end index
-- **dstrsplit** — split by delimiter into an array of `dstr`
 
 ## License
 
