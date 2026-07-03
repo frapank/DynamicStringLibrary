@@ -3,11 +3,9 @@
 #include <string.h>
 #include "dstr.h"
 
-// Global counters for test reporting
 static int tests_run = 0;
 static int tests_failed = 0;
 
-// Assertion macros with formatted output
 #define ASSERT_TRUE(expr) do { \
     tests_run++; \
     if (!(expr)) { \
@@ -30,8 +28,6 @@ static int tests_failed = 0;
     printf("Running %s...\n", #test_func); \
     test_func(); \
 } while (0)
-
-// --- TEST SUITE ---
 
 static void test_find_basic(void) {
     dstr s = dstrnew("Hello World");
@@ -221,6 +217,196 @@ static void test_case_conversion_roundtrip(void) {
     dstrfree(original);
 }
 
+static void test_range_basic(void) {
+    dstr s = dstrnew("Hello World");
+
+    dstr sub = dstrrange(s, 0, 5);
+    ASSERT_STR_EQUAL("Hello", sub);
+    ASSERT_TRUE(dstrlen(sub) == 5);
+    dstrfree(sub);
+
+    sub = dstrrange(s, 6, 11);
+    ASSERT_STR_EQUAL("World", sub);
+    dstrfree(sub);
+
+    sub = dstrrange(s, 0, 11);
+    ASSERT_STR_EQUAL("Hello World", sub);
+    dstrfree(sub);
+
+    dstrfree(s);
+}
+
+static void test_range_negative_index(void) {
+    dstr s = dstrnew("Hello World");
+
+    dstr sub = dstrrange(s, -5, -1);
+    ASSERT_STR_EQUAL("Worl", sub);
+    dstrfree(sub);
+
+    sub = dstrrange(s, -11, -6);
+    ASSERT_STR_EQUAL("Hello", sub);
+    dstrfree(sub);
+
+    sub = dstrrange(s, 0, -1);
+    ASSERT_STR_EQUAL("Hello Worl", sub);
+    dstrfree(sub);
+
+    sub = dstrrange(s, -5, 11);
+    ASSERT_STR_EQUAL("World", sub);
+    dstrfree(sub);
+
+    dstrfree(s);
+}
+
+static void test_range_out_of_bounds(void) {
+    dstr s = dstrnew("abc");
+
+    // Indices past either end are clamped, not an error.
+    dstr sub = dstrrange(s, -100, 100);
+    ASSERT_STR_EQUAL("abc", sub);
+    dstrfree(sub);
+
+    sub = dstrrange(s, 5, 10);
+    ASSERT_STR_EQUAL("", sub);
+    ASSERT_TRUE(dstrlen(sub) == 0);
+    dstrfree(sub);
+
+    sub = dstrrange(s, 2, 1);
+    ASSERT_STR_EQUAL("", sub);
+    dstrfree(sub);
+
+    sub = dstrrange(s, -100, -50);
+    ASSERT_STR_EQUAL("", sub);
+    dstrfree(sub);
+
+    dstrfree(s);
+}
+
+static void test_range_null(void) {
+    dstr sub = dstrrange(NULL, 0, 5);
+    ASSERT_TRUE(sub == NULL);
+}
+
+static void test_range_empty_string(void) {
+    dstr s = dstrnew("");
+    dstr sub = dstrrange(s, -5, 5);
+    ASSERT_STR_EQUAL("", sub);
+    dstrfree(sub);
+    dstrfree(s);
+}
+
+static void test_range_independent_allocation(void) {
+    // Mutating the slice must not affect the source string.
+    dstr s = dstrnew("Hello");
+    dstr sub = dstrrange(s, 0, 5);
+
+    dstrtoupper(sub);
+
+    ASSERT_STR_EQUAL("Hello", s);
+    ASSERT_STR_EQUAL("HELLO", sub);
+
+    dstrfree(s);
+    dstrfree(sub);
+}
+
+static void test_split_basic(void) {
+    dstr s = dstrnew("a,b,c");
+    size_t count = 0;
+
+    dstr* parts = dstrsplit(s, ",", &count);
+    ASSERT_TRUE(parts != NULL);
+    ASSERT_TRUE(count == 3);
+    ASSERT_STR_EQUAL("a", parts[0]);
+    ASSERT_STR_EQUAL("b", parts[1]);
+    ASSERT_STR_EQUAL("c", parts[2]);
+
+    dstrsplitfree(parts, count);
+    dstrfree(s);
+}
+
+static void test_split_adjacent_and_edge_delimiters(void) {
+    dstr s = dstrnew(",a,,b,");
+    size_t count = 0;
+
+    dstr* parts = dstrsplit(s, ",", &count);
+    ASSERT_TRUE(count == 5);
+    ASSERT_STR_EQUAL("", parts[0]);
+    ASSERT_STR_EQUAL("a", parts[1]);
+    ASSERT_STR_EQUAL("", parts[2]);
+    ASSERT_STR_EQUAL("b", parts[3]);
+    ASSERT_STR_EQUAL("", parts[4]);
+
+    dstrsplitfree(parts, count);
+    dstrfree(s);
+}
+
+static void test_split_multichar_delim(void) {
+    dstr s = dstrnew("one::two::three");
+    size_t count = 0;
+
+    dstr* parts = dstrsplit(s, "::", &count);
+    ASSERT_TRUE(count == 3);
+    ASSERT_STR_EQUAL("one", parts[0]);
+    ASSERT_STR_EQUAL("two", parts[1]);
+    ASSERT_STR_EQUAL("three", parts[2]);
+
+    dstrsplitfree(parts, count);
+    dstrfree(s);
+}
+
+static void test_split_no_match(void) {
+    dstr s = dstrnew("no-delimiter-here");
+    size_t count = 0;
+
+    dstr* parts = dstrsplit(s, ";", &count);
+    ASSERT_TRUE(count == 1);
+    ASSERT_STR_EQUAL("no-delimiter-here", parts[0]);
+
+    dstrsplitfree(parts, count);
+    dstrfree(s);
+}
+
+static void test_split_edge_cases(void) {
+    dstr s = dstrnew("data");
+    size_t count = 123;
+
+    ASSERT_TRUE(dstrsplit(NULL, ",", &count) == NULL);
+    ASSERT_TRUE(count == 0);
+
+    count = 123;
+    ASSERT_TRUE(dstrsplit(s, NULL, &count) == NULL);
+    ASSERT_TRUE(count == 0);
+
+    count = 123;
+    ASSERT_TRUE(dstrsplit(s, "", &count) == NULL);
+    ASSERT_TRUE(count == 0);
+
+    // out_count is optional.
+    dstr* parts = dstrsplit(s, "z", NULL);
+    ASSERT_TRUE(parts != NULL);
+    dstrsplitfree(parts, 1);
+
+    dstrsplitfree(NULL, 0);
+
+    dstrfree(s);
+}
+
+static void test_split_independent_allocations(void) {
+    // Mutating one part must not affect the source or the other parts.
+    dstr s = dstrnew("aa,bb");
+    size_t count = 0;
+    dstr* parts = dstrsplit(s, ",", &count);
+
+    dstrtoupper(parts[0]);
+
+    ASSERT_STR_EQUAL("aa,bb", s);
+    ASSERT_STR_EQUAL("AA", parts[0]);
+    ASSERT_STR_EQUAL("bb", parts[1]);
+
+    dstrsplitfree(parts, count);
+    dstrfree(s);
+}
+
 static void test_auto_cleanup(void) {
     // Isolated block to test cleanup attribute
     {
@@ -250,6 +436,18 @@ int main(void) {
     RUN_TEST(test_case_conversion_null);
     RUN_TEST(test_case_conversion_non_ascii_untouched);
     RUN_TEST(test_case_conversion_roundtrip);
+    RUN_TEST(test_range_basic);
+    RUN_TEST(test_range_negative_index);
+    RUN_TEST(test_range_out_of_bounds);
+    RUN_TEST(test_range_null);
+    RUN_TEST(test_range_empty_string);
+    RUN_TEST(test_range_independent_allocation);
+    RUN_TEST(test_split_basic);
+    RUN_TEST(test_split_adjacent_and_edge_delimiters);
+    RUN_TEST(test_split_multichar_delim);
+    RUN_TEST(test_split_no_match);
+    RUN_TEST(test_split_edge_cases);
+    RUN_TEST(test_split_independent_allocations);
     RUN_TEST(test_auto_cleanup);
 
     printf("\n\033[1;34m=== FINAL REPORT ===\033[0m\n");
