@@ -157,6 +157,28 @@ ssize_t index = dstrfind(s, "needle");
 
 Searches for the first occurrence of a null-terminated C string (`needle`) inside the dynamic string `s`. Returns the zero-based index of the first match, or `-1` if the substring is not found. It safely returns `-1` if either argument is `NULL`, if the needle is an empty string, or if the needle is longer than the string itself.
 
+### Range (substring)
+
+```c
+dstr sub = dstrrange(s, 0, 3);   // first 3 characters
+dstr sub = dstrrange(s, -3, -1); // second-to-last and third-to-last characters
+dstr sub = dstrrange(s, 2, -1);  // from index 2 up to (not including) the last character
+```
+
+Returns a new `dstr` holding the `[start, end)` slice of `s` (`end` is exclusive). Negative indices count from the end of the string, i.e. `-1` is the last character. Out-of-range indices are clamped instead of erroring, and a `start` at or past `end` yields an empty `dstr`. Returns `NULL` only if `s` is `NULL` or allocation fails. Free the result with `dstrfree`.
+
+### Split
+
+```c
+size_t count;
+dstr* parts = dstrsplit(s, ",", &count);
+for (size_t i = 0; i < count; i++)
+    puts(parts[i]);
+dstrsplitfree(parts, count);
+```
+
+Splits `s` on every occurrence of `delim`, returning a newly allocated array of `dstr`. Adjacent or leading/trailing delimiters produce empty (`""`) elements. Returns `NULL` if `s`/`delim` is `NULL`, `delim` is empty, or allocation fails. The array and every element must be released together with `dstrsplitfree`.
+
 ### Free
 
 ```c
@@ -198,8 +220,6 @@ dstr s = $("hello", 64);
 
 - **dstrinsert** — insert substring at a given index
 - **dstrtrim** — strip leading/trailing whitespace or a given charset
-- **dstrrange** — return a substring by start/end index
-- **dstrsplit** — split by delimiter into an array of `dstr`
 
 ## License
 
