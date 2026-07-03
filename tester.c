@@ -407,6 +407,41 @@ static void test_split_independent_allocations(void) {
     dstrfree(s);
 }
 
+static void test_growth_no_unnecessary_realloc(void) {
+    dstr s = dstrnew("");
+    s = dstrreserve(s, 128);
+    size_t cap_before = dstrcap(s);
+
+    for (int i = 0; i < 20; i++)
+        s = dstrcat(s, "x");
+
+    ASSERT_TRUE(dstrlen(s) == 20);
+    ASSERT_TRUE(dstrcap(s) == cap_before);
+
+    dstrfree(s);
+}
+
+static void test_growth_correctness_across_reallocs(void) {
+    dstr s = dstrnew("");
+
+    for (int i = 0; i < 1000; i++)
+        s = dstrpush(s, 'a');
+
+    ASSERT_TRUE(dstrlen(s) == 1000);
+    ASSERT_TRUE(dstrcap(s) >= 1001);
+
+    bool all_a = true;
+    for (size_t i = 0; i < dstrlen(s); i++) {
+        if (s[i] != 'a') {
+            all_a = false;
+            break;
+        }
+    }
+    ASSERT_TRUE(all_a);
+
+    dstrfree(s);
+}
+
 static void test_auto_cleanup(void) {
     // Isolated block to test cleanup attribute
     {
@@ -448,6 +483,8 @@ int main(void) {
     RUN_TEST(test_split_no_match);
     RUN_TEST(test_split_edge_cases);
     RUN_TEST(test_split_independent_allocations);
+    RUN_TEST(test_growth_no_unnecessary_realloc);
+    RUN_TEST(test_growth_correctness_across_reallocs);
     RUN_TEST(test_auto_cleanup);
 
     printf("\n\033[1;34m=== FINAL REPORT ===\033[0m\n");
