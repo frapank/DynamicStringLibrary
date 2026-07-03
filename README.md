@@ -42,6 +42,16 @@ cc -std=c11 your_file.c libdstr.a -o your_program
 
 If not defined, these fall back to the standard allocators.
 
+**Growth strategy** - controls how `dstrcat`, `dstrappend`, and `dstrpush` (the two-argument, non-custom forms) grow the buffer when the current capacity is not enough:
+
+```c
+// dstr_options.h
+#define DSTR_GROWTH_ENABLED 1   /* 1 = amortized growth, 0 = allocate exactly what is needed */
+#define DSTR_GROWTH_PERCENT 50  /* extra capacity added on growth, as a percent of the current capacity */
+```
+
+With `DSTR_GROWTH_ENABLED` set to 1 (the default), a growth only happens when the requested size exceeds the current capacity, and it adds `DSTR_GROWTH_PERCENT` percent of headroom on top (50 means the new capacity is roughly 1.5x the old one), so repeated small appends do not reallocate on every call. Setting it to 0 disables the headroom: every growth allocates exactly what is needed, trading more frequent reallocations for a tighter memory footprint. Either way, capacity is left untouched whenever it is already sufficient. The `_custom` variants of `dstrcat`, `dstrappend`, and `dstrpush`, as well as the `cap` argument of `dstrnew`, always honor the caller-supplied capacity and are not affected by these options.
+
 ## Types
 
 `dstr` is a `char*`. The internal headers (`dstrhd8`, `dstrhd16`, `dstrhd32`, `dstrhd64`) are implementation details and not part of the public API. The header type used for a given string is selected automatically based on the required capacity.
