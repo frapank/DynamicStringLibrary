@@ -87,6 +87,38 @@ void dstrfree(dstr s);
 ssize_t dstrfind(dstr s, const char* needle) W_UNUSED_RESULT;
 
 /*
+ * dstrrange(s, start, end)
+ *
+ * Return a new dstr with a copy of the [start, end) slice of s (end is
+ * exclusive). Negative indices count from the end of the string, as in
+ * s[len + start]. Out-of-range indices are clamped to [0, len], and a
+ * start at or past end yields an empty (but non-NULL) dstr.
+ * Returns NULL if s is NULL or on allocation failure. The result is an
+ * independent allocation; free it with dstrfree.
+ */
+dstr dstrrange(dstr s, ssize_t start, ssize_t end) W_UNUSED_RESULT;
+
+/*
+ * dstrsplit(s, delim, out_count)
+ *
+ * Split s on every occurrence of the null-terminated delim, returning a
+ * newly allocated array of dstr. Adjacent or leading/trailing delimiters
+ * produce empty ("") elements. If out_count is not NULL, the number of
+ * elements is written to it.
+ * Returns NULL (and *out_count = 0) if s or delim is NULL, delim is
+ * empty, or on allocation failure. Free the result with dstrsplitfree.
+ */
+dstr* dstrsplit(dstr s, const char* delim, size_t* out_count) W_UNUSED_RESULT;
+
+/*
+ * dstrsplitfree(parts, count)
+ *
+ * Free an array returned by dstrsplit, including each element. Passing
+ * NULL is a no-op.
+ */
+void dstrsplitfree(dstr* parts, size_t count);
+
+/*
  * dstrlen(s)  - number of characters in s, excluding the null terminator.
  * dstrcap(s)  - total allocated capacity in bytes.
  */
