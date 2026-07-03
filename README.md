@@ -139,6 +139,15 @@ if (dstrequal(s1, s2)) { ... }
 
 Returns `true` if the strings are equal, `false` otherwise. Both arguments must be `dstr`. For `dstr` vs `char*` comparisons use `strcmp` directly.
 
+### Case conversion
+
+```c
+dstrtolower(s);
+dstrtoupper(s);
+```
+
+Converts ASCII letters in place. Bytes outside `'A'-'Z'`/`'a'-'z'`, including non-ASCII bytes, are left untouched. Length and capacity are unchanged; no reallocation occurs. No-op if `s` is `NULL`.
+
 ### Find substring
 
 ```c
@@ -192,7 +201,6 @@ dstr s = $("hello", 64);
 - **dstrtrim** — strip leading/trailing whitespace or a given charset
 - **dstrrange** — return a substring by start/end index
 - **dstrsplit** — split by delimiter into an array of `dstr`
-- **dstrtolower / dstrtoupper** — in-place ASCII case conversion
 
 ## License
 

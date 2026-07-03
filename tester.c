@@ -125,6 +125,102 @@ static void test_clear_and_zero(void) {
     dstrfree(s);
 }
 
+static void test_tolower_basic(void) {
+    dstr s = dstrnew("Hello World! 123");
+    size_t len = dstrlen(s);
+    size_t cap = dstrcap(s);
+
+    dstrtolower(s);
+
+    ASSERT_STR_EQUAL("hello world! 123", s);
+    ASSERT_TRUE(dstrlen(s) == len);
+    ASSERT_TRUE(dstrcap(s) == cap);
+
+    dstrfree(s);
+}
+
+static void test_toupper_basic(void) {
+    dstr s = dstrnew("Hello World! 123");
+    size_t len = dstrlen(s);
+    size_t cap = dstrcap(s);
+
+    dstrtoupper(s);
+
+    ASSERT_STR_EQUAL("HELLO WORLD! 123", s);
+    ASSERT_TRUE(dstrlen(s) == len);
+    ASSERT_TRUE(dstrcap(s) == cap);
+
+    dstrfree(s);
+}
+
+static void test_case_conversion_already_converted(void) {
+    dstr lower = dstrnew("already lower");
+    dstrtolower(lower);
+    ASSERT_STR_EQUAL("already lower", lower);
+    dstrfree(lower);
+
+    dstr upper = dstrnew("ALREADY UPPER");
+    dstrtoupper(upper);
+    ASSERT_STR_EQUAL("ALREADY UPPER", upper);
+    dstrfree(upper);
+}
+
+static void test_case_conversion_empty(void) {
+    dstr s = dstrnew("");
+
+    dstrtolower(s);
+    ASSERT_STR_EQUAL("", s);
+    ASSERT_TRUE(dstrlen(s) == 0);
+
+    dstrtoupper(s);
+    ASSERT_STR_EQUAL("", s);
+    ASSERT_TRUE(dstrlen(s) == 0);
+
+    dstrfree(s);
+}
+
+static void test_case_conversion_null(void) {
+    // Must not crash on NULL input.
+    dstrtolower(NULL);
+    dstrtoupper(NULL);
+    ASSERT_TRUE(true);
+}
+
+static void test_case_conversion_non_ascii_untouched(void) {
+    // Bytes >= 0x80 (e.g. UTF-8 continuation/lead bytes) must be left
+    // untouched, and must not trigger undefined behavior on signed char.
+    dstr s = dstrnew("\xC3\x89LLO \xC3\xA9llo");
+    size_t len = dstrlen(s);
+
+    dstrtolower(s);
+    ASSERT_STR_EQUAL("\xC3\x89llo \xC3\xA9llo", s);
+    ASSERT_TRUE(dstrlen(s) == len);
+
+    dstr s2 = dstrnew("\xC3\x89LLO \xC3\xA9llo");
+    dstrtoupper(s2);
+    ASSERT_STR_EQUAL("\xC3\x89LLO \xC3\xA9LLO", s2);
+
+    dstrfree(s);
+    dstrfree(s2);
+}
+
+static void test_case_conversion_roundtrip(void) {
+    dstr s = dstrnew("MiXeD CaSe 42!");
+    dstr original = dstrdup(s);
+
+    dstrtoupper(s);
+    dstrtolower(s);
+
+    // Original had lowercase letters already lowercase and uppercase
+    // letters that become lowercase too, so compare against a fully
+    // lowercased reference instead of the original.
+    dstrtolower(original);
+    ASSERT_STR_EQUAL(original, s);
+
+    dstrfree(s);
+    dstrfree(original);
+}
+
 static void test_auto_cleanup(void) {
     // Isolated block to test cleanup attribute
     {
@@ -147,6 +243,13 @@ int main(void) {
     RUN_TEST(test_concatenation);
     RUN_TEST(test_push_char);
     RUN_TEST(test_clear_and_zero);
+    RUN_TEST(test_tolower_basic);
+    RUN_TEST(test_toupper_basic);
+    RUN_TEST(test_case_conversion_already_converted);
+    RUN_TEST(test_case_conversion_empty);
+    RUN_TEST(test_case_conversion_null);
+    RUN_TEST(test_case_conversion_non_ascii_untouched);
+    RUN_TEST(test_case_conversion_roundtrip);
     RUN_TEST(test_auto_cleanup);
 
     printf("\n\033[1;34m=== FINAL REPORT ===\033[0m\n");
