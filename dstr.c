@@ -351,10 +351,20 @@ static dstr _dstr_concat_impl(dstr s1,
     size_t new_len = s1_len + s2_len;
     if (cap < new_len + 1)
         cap = new_len + 1;
+
+    uintptr_t s1_addr = (uintptr_t)s1;
+    uintptr_t s2_addr = (uintptr_t)s2;
+    size_t s1_cap = dstrcap(s1);
+    bool s2_aliases_s1 = s2_addr >= s1_addr && s2_addr - s1_addr < s1_cap;
+    size_t s2_offset = s2_aliases_s1 ? (size_t)(s2_addr - s1_addr) : 0;
+
     dstr tmp = dstrreserve(s1, cap);
     if (!tmp)
         return NULL;
     s1 = tmp;
+
+    if (s2_aliases_s1)
+        s2 = s1 + s2_offset;
 
     uint8_t hdr_type = DSTRGETTYPE(s1);
     void* hd = NULL;
