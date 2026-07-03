@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef _WIN32
 #include <stddef.h>
@@ -49,6 +50,45 @@ typedef ptrdiff_t ssize_t;
 #define W_UNUSED_RESULT __attribute__((warn_unused_result))
 
 typedef char* dstr;
+
+enum dstrhd_type {
+    DSTRHD_TYPE_8 = 0,
+    DSTRHD_TYPE_16 = 1,
+    DSTRHD_TYPE_32 = 2,
+    DSTRHD_TYPE_64 = 3
+};
+
+struct __attribute__((packed)) dstrhd8 {
+    uint8_t len;
+    uint8_t cap;
+    uint8_t type;
+    char buf[];
+};
+
+struct __attribute__((packed)) dstrhd16 {
+    uint16_t len;
+    uint16_t cap;
+    uint8_t type;
+    char buf[];
+};
+
+struct __attribute__((packed)) dstrhd32 {
+    uint32_t len;
+    uint32_t cap;
+    uint8_t type;
+    char buf[];
+};
+
+struct __attribute__((packed)) dstrhd64 {
+    uint64_t len;
+    uint64_t cap;
+    uint8_t type;
+    char buf[];
+};
+
+#define DSTRGETHDR(n, s)                                                       \
+    ((struct dstrhd##n*)((char*)(s) - sizeof(struct dstrhd##n)))
+#define DSTRGETTYPE(s) ((uint8_t)((s)[-1]))
 
 /*
  * dstrnew(msg)
@@ -122,8 +162,41 @@ void dstrsplitfree(dstr* parts, size_t count);
  * dstrlen(s)  - number of characters in s, excluding the null terminator.
  * dstrcap(s)  - total allocated capacity in bytes.
  */
-size_t dstrlen(dstr s) W_UNUSED_RESULT;
-size_t dstrcap(dstr s) W_UNUSED_RESULT;
+static inline size_t dstrlen(dstr s) W_UNUSED_RESULT;
+static inline size_t dstrlen(dstr s)
+{
+    if (!s)
+        return 0;
+    switch ((enum dstrhd_type)DSTRGETTYPE(s)) {
+        case DSTRHD_TYPE_8:
+            return DSTRGETHDR(8, s)->len;
+        case DSTRHD_TYPE_16:
+            return DSTRGETHDR(16, s)->len;
+        case DSTRHD_TYPE_32:
+            return DSTRGETHDR(32, s)->len;
+        case DSTRHD_TYPE_64:
+            return DSTRGETHDR(64, s)->len;
+    }
+    return 0;
+}
+
+static inline size_t dstrcap(dstr s) W_UNUSED_RESULT;
+static inline size_t dstrcap(dstr s)
+{
+    if (!s)
+        return 0;
+    switch ((enum dstrhd_type)DSTRGETTYPE(s)) {
+        case DSTRHD_TYPE_8:
+            return DSTRGETHDR(8, s)->cap;
+        case DSTRHD_TYPE_16:
+            return DSTRGETHDR(16, s)->cap;
+        case DSTRHD_TYPE_32:
+            return DSTRGETHDR(32, s)->cap;
+        case DSTRHD_TYPE_64:
+            return DSTRGETHDR(64, s)->cap;
+    }
+    return 0;
+}
 
 /*
  * dstrclear(s)
