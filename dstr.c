@@ -160,32 +160,153 @@ static inline size_t _dstr_grow_cap(size_t old_cap, size_t needed)
     return grown > needed ? grown : needed;
 }
 
-// strfind
-ssize_t dstrfind(dstr s, const char* needle)
+static inline ssize_t _dstr_find_from(const char* buf,
+                                      size_t len,
+                                      const char* needle,
+                                      size_t nlen,
+                                      size_t from)
 {
-    if (!s || !needle || needle[0] == '\0')
+    if (from > len || nlen > len - from)
         return -1;
 
-    size_t len = dstrlen(s);
-    size_t nlen = strlen(needle);
-
-    if (nlen > len)
-        return -1;
-
-    size_t remaining = len - nlen + 1;
-    const char* cursor = s;
+    size_t remaining = len - from - nlen + 1;
+    const char* cursor = buf + from;
 
     while (remaining > 0) {
         const char* hit = memchr(cursor, needle[0], remaining);
         if (!hit)
             return -1;
         if (memcmp(hit, needle, nlen) == 0)
-            return hit - s;
+            return hit - buf;
         remaining -= (size_t)(hit - cursor) + 1;
         cursor = hit + 1;
     }
 
     return -1;
+}
+
+static dstr _dstr_slice_alloc(const char* buf, size_t len)
+{
+    enum dstrhd_type t = _dstr_type_by_size(len + 1);
+    size_t hd_size = _dstr_size_by_type(t);
+
+    void* hd = DSTR_MALLOC(hd_size + len + 1);
+    if (!hd)
+        return NULL;
+
+    _dstr_set_len(hd, len, t);
+    _dstr_set_cap(hd, len + 1, t);
+    *((uint8_t*)hd + hd_size - 1) = (uint8_t)t;
+
+    char* buf_out = (char*)hd + hd_size;
+    memcpy(buf_out, buf, len);
+    buf_out[len] = '\0';
+
+    return buf_out;
+}
+
+// strfind
+ssize_t dstrfind(dstr s, const char* needle)
+{
+    if (!s || !needle || needle[0] == '\0')
+        return -1;
+
+    return _dstr_find_from(s, dstrlen(s), needle, strlen(needle), 0);
+}
+
+// dstrrange
+dstr dstrrange(dstr s, ssize_t start, ssize_t end)
+{
+    if (!s)
+        return NULL;
+
+    size_t len_u = dstrlen(s);
+    ssize_t len = (len_u > (size_t)PTRDIFF_MAX) ? PTRDIFF_MAX : (ssize_t)len_u;
+
+    if (start < 0)
+        start += len;
+    if (start < 0)
+        start = 0;
+    if (start > len)
+        start = len;
+
+    if (end < 0)
+        end += len;
+    if (end < 0)
+        end = 0;
+    if (end > len)
+        end = len;
+
+    size_t sub_len = (start >= end) ? 0 : (size_t)(end - start);
+
+    return _dstr_slice_alloc(s + start, sub_len);
+}
+
+// dstrsplit
+dstr* dstrsplit(dstr s, const char* delim, size_t* out_count)
+{
+    if (out_count)
+        *out_count = 0;
+
+    if (!s || !delim || delim[0] == '\0')
+        return NULL;
+
+    size_t len = dstrlen(s);
+    size_t dlen = strlen(delim);
+
+    size_t count = 1;
+    size_t pos = 0;
+    for (;;) {
+        ssize_t idx = _dstr_find_from(s, len, delim, dlen, pos);
+        if (idx < 0)
+            break;
+        count++;
+        pos = (size_t)idx + dlen;
+    }
+
+    if (count > SIZE_MAX / sizeof(dstr))
+        return NULL;
+
+    dstr* parts = DSTR_MALLOC(count * sizeof(dstr));
+    if (!parts)
+        return NULL;
+
+    size_t n = 0;
+    pos = 0;
+    for (;;) {
+        ssize_t idx = _dstr_find_from(s, len, delim, dlen, pos);
+        size_t piece_end = (idx < 0) ? len : (size_t)idx;
+
+        parts[n] = _dstr_slice_alloc(s + pos, piece_end - pos);
+        if (!parts[n]) {
+            for (size_t i = 0; i < n; i++)
+                dstrfree(parts[i]);
+            DSTR_FREE(parts);
+            return NULL;
+        }
+        n++;
+
+        if (idx < 0)
+            break;
+        pos = piece_end + dlen;
+    }
+
+    if (out_count)
+        *out_count = n;
+
+    return parts;
+}
+
+// dstrsplitfree
+void dstrsplitfree(dstr* parts, size_t count)
+{
+    if (!parts)
+        return;
+
+    for (size_t i = 0; i < count; i++)
+        dstrfree(parts[i]);
+
+    DSTR_FREE(parts);
 }
 
 // strlen
