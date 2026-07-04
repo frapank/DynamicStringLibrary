@@ -129,14 +129,14 @@ ssize_t dstrfind(dstr s, const char* needle) W_UNUSED_RESULT;
 /*
  * dstrrange(s, start, end)
  *
- * Return a new dstr with a copy of the [start, end) slice of s (end is
- * exclusive). Negative indices count from the end of the string, as in
- * s[len + start]. Out-of-range indices are clamped to [0, len], and a
- * start at or past end yields an empty (but non-NULL) dstr.
- * Returns NULL if s is NULL or on allocation failure. The result is an
- * independent allocation; free it with dstrfree.
+ * Keep only the [start, end] slice of s, in place (end is inclusive).
+ * Negative indices count from the end of the string, as in s[len + start].
+ * Out-of-range indices are clamped, and a start past end or past the end
+ * of the string yields an empty string. No allocation, no new pointer:
+ * the existing buffer is shifted with memmove and truncated in place.
+ * No-op if s is NULL or empty.
  */
-dstr dstrrange(dstr s, ssize_t start, ssize_t end) W_UNUSED_RESULT;
+void dstrrange(dstr s, ssize_t start, ssize_t end);
 
 /*
  * dstrsplit(s, delim, out_count)
