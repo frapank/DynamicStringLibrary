@@ -187,31 +187,42 @@ ssize_t dstrfind(dstr s, const char* needle)
 }
 
 // dstrrange
-dstr dstrrange(dstr s, ssize_t start, ssize_t end)
+void dstrrange(dstr s, ssize_t start, ssize_t end)
 {
-    if (!s)
-        return NULL;
+    enum dstrhd_type t;
+    void* hd = _dstr_get_hdr_and_type(s, &t);
+    if (!hd)
+        return;
 
-    size_t len_u = dstrlen(s);
-    ssize_t len = (len_u > (size_t)PTRDIFF_MAX) ? PTRDIFF_MAX : (ssize_t)len_u;
+    ssize_t len = (ssize_t)dstrlen(s);
+    if (len == 0)
+        return;
 
-    if (start < 0)
+    if (start < 0) {
         start += len;
-    if (start < 0)
-        start = 0;
-    if (start > len)
-        start = len;
-
-    if (end < 0)
+        if (start < 0)
+            start = 0;
+    }
+    if (end < 0) {
         end += len;
-    if (end < 0)
-        end = 0;
-    if (end > len)
-        end = len;
+        if (end < 0)
+            end = 0;
+    }
 
-    size_t sub_len = (start >= end) ? 0 : (size_t)(end - start);
+    size_t newlen = (start > end) ? 0 : (size_t)(end - start) + 1;
+    if (newlen != 0) {
+        if (start >= len) {
+            newlen = 0;
+        } else if (end >= len) {
+            end = len - 1;
+            newlen = (size_t)(end - start) + 1;
+        }
+    }
 
-    return _dstr_slice_alloc(s + start, sub_len);
+    if (start && newlen)
+        memmove(s, s + start, newlen);
+    s[newlen] = '\0';
+    _dstr_set_len(hd, newlen, t);
 }
 
 // dstrsplit
