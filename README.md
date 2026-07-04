@@ -6,6 +6,10 @@ dstr is a dynamic string library for C (C11+). It exposes a `char*` interface ba
 
 Requires gcc or clang. Supported architectures: x86, x86-64, ARM, ARM64.
 
+## Benchmarks
+
+dstr is benchmarked head-to-head against sds (Redis's string library) in [RECAP.md](RECAP.md): speed and memory numbers, methodology, and the reasoning behind each result. The benchmark sources live in `bench/`.
+
 ## Build
 
 The library ships as two files: `dstr.h` and `dstr.c`. Compile and link using the provided Makefile:
@@ -170,12 +174,12 @@ Searches for the first occurrence of a null-terminated C string (`needle`) insid
 ### Range (substring)
 
 ```c
-dstr sub = dstrrange(s, 0, 3);   // first 3 characters
-dstr sub = dstrrange(s, -3, -1); // second-to-last and third-to-last characters
-dstr sub = dstrrange(s, 2, -1);  // from index 2 up to (not including) the last character
+dstrrange(s, 0, 2);   // keep only the first 3 characters
+dstrrange(s, -3, -1); // keep the last 3 characters
+dstrrange(s, 2, -1);  // keep from index 2 to the last character
 ```
 
-Returns a new `dstr` holding the `[start, end)` slice of `s` (`end` is exclusive). Negative indices count from the end of the string, i.e. `-1` is the last character. Out-of-range indices are clamped instead of erroring, and a `start` at or past `end` yields an empty `dstr`. Returns `NULL` only if `s` is `NULL` or allocation fails. Free the result with `dstrfree`.
+Keeps only the `[start, end]` slice of `s`, in place (`end` is inclusive). Negative indices count from the end of the string, i.e. `-1` is the last character. Out-of-range indices are clamped instead of erroring, and a `start` past `end` or past the end of the string yields an empty `dstr`. No allocation happens: the existing buffer is shifted with `memmove` and truncated in place. No-op if `s` is `NULL` or empty.
 
 ### Split
 
