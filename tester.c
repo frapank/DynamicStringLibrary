@@ -220,41 +220,41 @@ static void test_case_conversion_roundtrip(void) {
 static void test_range_basic(void) {
     dstr s = dstrnew("Hello World");
 
-    dstr sub = dstrrange(s, 0, 5);
-    ASSERT_STR_EQUAL("Hello", sub);
-    ASSERT_TRUE(dstrlen(sub) == 5);
-    dstrfree(sub);
+    dstrrange(s, 0, 4);
+    ASSERT_STR_EQUAL("Hello", s);
+    ASSERT_TRUE(dstrlen(s) == 5);
+    dstrfree(s);
 
-    sub = dstrrange(s, 6, 11);
-    ASSERT_STR_EQUAL("World", sub);
-    dstrfree(sub);
+    s = dstrnew("Hello World");
+    dstrrange(s, 6, 10);
+    ASSERT_STR_EQUAL("World", s);
+    dstrfree(s);
 
-    sub = dstrrange(s, 0, 11);
-    ASSERT_STR_EQUAL("Hello World", sub);
-    dstrfree(sub);
-
+    s = dstrnew("Hello World");
+    dstrrange(s, 0, 10);
+    ASSERT_STR_EQUAL("Hello World", s);
     dstrfree(s);
 }
 
 static void test_range_negative_index(void) {
     dstr s = dstrnew("Hello World");
+    dstrrange(s, -5, -2);
+    ASSERT_STR_EQUAL("Worl", s);
+    dstrfree(s);
 
-    dstr sub = dstrrange(s, -5, -1);
-    ASSERT_STR_EQUAL("Worl", sub);
-    dstrfree(sub);
+    s = dstrnew("Hello World");
+    dstrrange(s, -11, -7);
+    ASSERT_STR_EQUAL("Hello", s);
+    dstrfree(s);
 
-    sub = dstrrange(s, -11, -6);
-    ASSERT_STR_EQUAL("Hello", sub);
-    dstrfree(sub);
+    s = dstrnew("Hello World");
+    dstrrange(s, 0, -2);
+    ASSERT_STR_EQUAL("Hello Worl", s);
+    dstrfree(s);
 
-    sub = dstrrange(s, 0, -1);
-    ASSERT_STR_EQUAL("Hello Worl", sub);
-    dstrfree(sub);
-
-    sub = dstrrange(s, -5, 11);
-    ASSERT_STR_EQUAL("World", sub);
-    dstrfree(sub);
-
+    s = dstrnew("Hello World");
+    dstrrange(s, -5, 10);
+    ASSERT_STR_EQUAL("World", s);
     dstrfree(s);
 }
 
@@ -262,51 +262,52 @@ static void test_range_out_of_bounds(void) {
     dstr s = dstrnew("abc");
 
     // Indices past either end are clamped, not an error.
-    dstr sub = dstrrange(s, -100, 100);
-    ASSERT_STR_EQUAL("abc", sub);
-    dstrfree(sub);
+    dstrrange(s, -100, 100);
+    ASSERT_STR_EQUAL("abc", s);
+    dstrfree(s);
 
-    sub = dstrrange(s, 5, 10);
-    ASSERT_STR_EQUAL("", sub);
-    ASSERT_TRUE(dstrlen(sub) == 0);
-    dstrfree(sub);
+    s = dstrnew("abc");
+    dstrrange(s, 5, 10);
+    ASSERT_STR_EQUAL("", s);
+    ASSERT_TRUE(dstrlen(s) == 0);
+    dstrfree(s);
 
-    sub = dstrrange(s, 2, 1);
-    ASSERT_STR_EQUAL("", sub);
-    dstrfree(sub);
+    s = dstrnew("abc");
+    dstrrange(s, 2, 1);
+    ASSERT_STR_EQUAL("", s);
+    dstrfree(s);
 
-    sub = dstrrange(s, -100, -50);
-    ASSERT_STR_EQUAL("", sub);
-    dstrfree(sub);
-
+    // Both indices resolve to a clamped 0 rather than an empty range: this
+    // mirrors sdsrange, whose clamp-to-0 path (unlike its clamp-to-len
+    // path) does not force newlen to 0.
+    s = dstrnew("abc");
+    dstrrange(s, -100, -50);
+    ASSERT_STR_EQUAL("a", s);
     dstrfree(s);
 }
 
 static void test_range_null(void) {
-    dstr sub = dstrrange(NULL, 0, 5);
-    ASSERT_TRUE(sub == NULL);
+    dstrrange(NULL, 0, 5);
 }
 
 static void test_range_empty_string(void) {
     dstr s = dstrnew("");
-    dstr sub = dstrrange(s, -5, 5);
-    ASSERT_STR_EQUAL("", sub);
-    dstrfree(sub);
+    dstrrange(s, -5, 5);
+    ASSERT_STR_EQUAL("", s);
     dstrfree(s);
 }
 
-static void test_range_independent_allocation(void) {
-    // Mutating the slice must not affect the source string.
-    dstr s = dstrnew("Hello");
-    dstr sub = dstrrange(s, 0, 5);
+static void test_range_in_place(void) {
+    // dstrrange mutates the existing buffer, no new allocation.
+    dstr s = dstrnew("Hello World");
+    dstr same = s;
 
-    dstrtoupper(sub);
+    dstrrange(s, 0, 4);
 
+    ASSERT_TRUE(s == same);
     ASSERT_STR_EQUAL("Hello", s);
-    ASSERT_STR_EQUAL("HELLO", sub);
 
     dstrfree(s);
-    dstrfree(sub);
 }
 
 static void test_split_basic(void) {
@@ -476,7 +477,7 @@ int main(void) {
     RUN_TEST(test_range_out_of_bounds);
     RUN_TEST(test_range_null);
     RUN_TEST(test_range_empty_string);
-    RUN_TEST(test_range_independent_allocation);
+    RUN_TEST(test_range_in_place);
     RUN_TEST(test_split_basic);
     RUN_TEST(test_split_adjacent_and_edge_delimiters);
     RUN_TEST(test_split_multichar_delim);
