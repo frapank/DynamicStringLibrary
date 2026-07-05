@@ -283,6 +283,19 @@ dstr dstrappend_base(dstr s1, const dstr s2) W_UNUSED_RESULT;
 dstr dstrappend_custom(dstr s1, const dstr s2, size_t cap) W_UNUSED_RESULT;
 
 /*
+ * dstrinsert(s1, idx, s2)
+ *
+ * Insert the null-terminated string s2 into s1 at idx, in place. Negative
+ * indices count from the end of the string, as in s[len + idx]. Out-of-range
+ * indices are clamped instead of erroring, so an idx at or before the start
+ * prepends and an idx at or past the end appends.
+ * May reallocate s1; always use the returned pointer.
+ * Returns s1 unchanged if s1 or s2 is NULL, or if s2 is empty.
+ * Returns NULL on allocation failure.
+ */
+dstr dstrinsert(dstr s1, ssize_t idx, const char* s2) W_UNUSED_RESULT;
+
+/*
  * dstrauto
  *
  * Storage-class attribute that calls dstrfree automatically when the variable

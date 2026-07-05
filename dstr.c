@@ -561,6 +561,63 @@ dstr dstrappend_custom(dstr s1, const dstr s2, size_t cap)
     return _dstr_concat_impl(s1, dstrlen(s1), s2, dstrlen(s2), cap);
 }
 
+// dstrinsert
+dstr dstrinsert(dstr s1, ssize_t idx, const char* s2)
+{
+    if (!s1 || !s2)
+        return s1;
+
+    size_t s1_len = dstrlen(s1);
+    size_t s2_len = strlen(s2);
+    if (s2_len == 0)
+        return s1;
+    if (s2_len > SIZE_MAX - s1_len)
+        return NULL;
+
+    if (idx < 0) {
+        idx += (ssize_t)s1_len;
+        if (idx < 0)
+            idx = 0;
+    }
+    size_t pos = ((size_t)idx > s1_len) ? s1_len : (size_t)idx;
+    size_t new_len = s1_len + s2_len;
+
+    uintptr_t s1_addr = (uintptr_t)s1;
+    uintptr_t s2_addr = (uintptr_t)s2;
+    size_t s1_cap = dstrcap(s1);
+    bool s2_aliases_s1 = s2_addr >= s1_addr && s2_addr - s1_addr < s1_cap;
+    size_t s2_offset = s2_aliases_s1 ? (size_t)(s2_addr - s1_addr) : 0;
+
+    dstr tmp = dstrreserve(s1, _dstr_grow_cap(s1_cap, new_len + 1));
+    if (!tmp)
+        return NULL;
+    s1 = tmp;
+
+    if (s2_aliases_s1)
+        s2 = s1 + s2_offset;
+
+    enum dstrhd_type t;
+    void* hd = _dstr_get_hdr_and_type(s1, &t);
+
+    size_t tail_len = s1_len - pos + 1;
+
+    if (s2_aliases_s1 && s2_offset + s2_len > pos) {
+        char* scratch = DSTR_MALLOC(s2_len);
+        if (!scratch)
+            return NULL;
+        memcpy(scratch, s2, s2_len);
+        memmove(s1 + pos + s2_len, s1 + pos, tail_len);
+        memcpy(s1 + pos, scratch, s2_len);
+        DSTR_FREE(scratch);
+    } else {
+        memmove(s1 + pos + s2_len, s1 + pos, tail_len);
+        memcpy(s1 + pos, s2, s2_len);
+    }
+
+    _dstr_set_len(hd, new_len, t);
+    return s1;
+}
+
 // strnew
 static dstr _dstrnew_allocator(enum dstrhd_type t,
                                const char* msg,
