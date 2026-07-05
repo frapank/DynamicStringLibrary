@@ -443,6 +443,166 @@ static void test_growth_correctness_across_reallocs(void) {
     dstrfree(s);
 }
 
+static void test_trim_whitespace_basic(void) {
+    dstr s = dstrnew("   Hello World   ");
+    dstrtrim(s);
+    ASSERT_STR_EQUAL("Hello World", s);
+    ASSERT_TRUE(dstrlen(s) == 11);
+    dstrfree(s);
+
+    s = dstrnew("\t\n  data \r\v\f");
+    dstrtrim(s);
+    ASSERT_STR_EQUAL("data", s);
+    dstrfree(s);
+}
+
+static void test_trim_no_change(void) {
+    dstr s = dstrnew("nothing to trim");
+    size_t cap = dstrcap(s);
+    dstrtrim(s);
+    ASSERT_STR_EQUAL("nothing to trim", s);
+    ASSERT_TRUE(dstrcap(s) == cap);
+    dstrfree(s);
+}
+
+static void test_trim_all_whitespace(void) {
+    dstr s = dstrnew("   \t\n  ");
+    dstrtrim(s);
+    ASSERT_STR_EQUAL("", s);
+    ASSERT_TRUE(dstrlen(s) == 0);
+    dstrfree(s);
+}
+
+static void test_trim_empty_and_null(void) {
+    dstr s = dstrnew("");
+    dstrtrim(s);
+    ASSERT_STR_EQUAL("", s);
+    dstrfree(s);
+
+    dstrtrim(NULL);
+    ASSERT_TRUE(true);
+}
+
+static void test_trim_custom_cutset(void) {
+    dstr s = dstrnew("xxxHelloxxx");
+    dstrtrim(s, "x");
+    ASSERT_STR_EQUAL("Hello", s);
+    dstrfree(s);
+
+    s = dstrnew("-+-value-+-");
+    dstrtrim(s, "+-");
+    ASSERT_STR_EQUAL("value", s);
+    dstrfree(s);
+}
+
+static void test_trim_custom_cutset_edge_cases(void) {
+    dstr s = dstrnew("abc");
+    dstrtrim(s, "");
+    ASSERT_STR_EQUAL("abc", s);
+
+    dstrtrim(s, NULL);
+    ASSERT_STR_EQUAL("abc", s);
+
+    dstrtrim(s, "abc");
+    ASSERT_STR_EQUAL("", s);
+
+    dstrfree(s);
+}
+
+static void test_insert_basic(void) {
+    dstr s = dstrnew("Hello World");
+    s = dstrinsert(s, 5, ",");
+    ASSERT_STR_EQUAL("Hello, World", s);
+    ASSERT_TRUE(dstrlen(s) == 12);
+    dstrfree(s);
+}
+
+static void test_insert_prepend_and_append(void) {
+    dstr s = dstrnew("World");
+    s = dstrinsert(s, 0, "Hello ");
+    ASSERT_STR_EQUAL("Hello World", s);
+    dstrfree(s);
+
+    s = dstrnew("Hello");
+    s = dstrinsert(s, 5, " World");
+    ASSERT_STR_EQUAL("Hello World", s);
+    dstrfree(s);
+
+    s = dstrnew("Hello");
+    s = dstrinsert(s, 1000, "!");
+    ASSERT_STR_EQUAL("Hello!", s);
+    dstrfree(s);
+}
+
+static void test_insert_negative_index(void) {
+    dstr s = dstrnew("Hello World");
+    s = dstrinsert(s, -5, "-");
+    ASSERT_STR_EQUAL("Hello -World", s);
+    dstrfree(s);
+
+    s = dstrnew("abc");
+    s = dstrinsert(s, -1000, "X");
+    ASSERT_STR_EQUAL("Xabc", s);
+    dstrfree(s);
+}
+
+static void test_insert_edge_cases(void) {
+    dstr s = dstrnew("abc");
+
+    ASSERT_TRUE(dstrinsert(NULL, 0, "x") == NULL);
+
+    dstr same = dstrinsert(s, 1, NULL);
+    ASSERT_TRUE(same == s);
+    ASSERT_STR_EQUAL("abc", s);
+
+    same = dstrinsert(s, 1, "");
+    ASSERT_TRUE(same == s);
+    ASSERT_STR_EQUAL("abc", s);
+
+    dstrfree(s);
+}
+
+static void test_insert_self_alias(void) {
+    // Inserting a string into itself must not read moved/corrupted memory.
+    dstr s = dstrnew("abc");
+    s = dstrinsert(s, 0, s);
+    ASSERT_STR_EQUAL("abcabc", s);
+    dstrfree(s);
+
+    s = dstrnew("abc");
+    s = dstrinsert(s, 1, s);
+    ASSERT_STR_EQUAL("aabcbc", s);
+    dstrfree(s);
+
+    s = dstrnew("abc");
+    s = dstrinsert(s, 3, s);
+    ASSERT_STR_EQUAL("abcabc", s);
+    dstrfree(s);
+
+    s = dstrnew("abcdef");
+    s = dstrinsert(s, 2, s + 3);
+    ASSERT_STR_EQUAL("abdefcdef", s);
+    dstrfree(s);
+}
+
+static void test_insert_growth_across_reallocs(void) {
+    dstr s = dstrnew("");
+    for (int i = 0; i < 200; i++)
+        s = dstrinsert(s, 0, "ab");
+
+    ASSERT_TRUE(dstrlen(s) == 400);
+    bool ok = true;
+    for (size_t i = 0; i < dstrlen(s); i += 2) {
+        if (s[i] != 'a' || s[i + 1] != 'b') {
+            ok = false;
+            break;
+        }
+    }
+    ASSERT_TRUE(ok);
+
+    dstrfree(s);
+}
+
 static void test_auto_cleanup(void) {
     // Isolated block to test cleanup attribute
     {
@@ -486,6 +646,18 @@ int main(void) {
     RUN_TEST(test_split_independent_allocations);
     RUN_TEST(test_growth_no_unnecessary_realloc);
     RUN_TEST(test_growth_correctness_across_reallocs);
+    RUN_TEST(test_trim_whitespace_basic);
+    RUN_TEST(test_trim_no_change);
+    RUN_TEST(test_trim_all_whitespace);
+    RUN_TEST(test_trim_empty_and_null);
+    RUN_TEST(test_trim_custom_cutset);
+    RUN_TEST(test_trim_custom_cutset_edge_cases);
+    RUN_TEST(test_insert_basic);
+    RUN_TEST(test_insert_prepend_and_append);
+    RUN_TEST(test_insert_negative_index);
+    RUN_TEST(test_insert_edge_cases);
+    RUN_TEST(test_insert_self_alias);
+    RUN_TEST(test_insert_growth_across_reallocs);
     RUN_TEST(test_auto_cleanup);
 
     printf("\n\033[1;34m=== FINAL REPORT ===\033[0m\n");

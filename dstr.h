@@ -47,6 +47,10 @@ typedef ptrdiff_t ssize_t;
 #define dstrappend(...)                                                        \
     GET_DSTRAPPEND(__VA_ARGS__, dstrappend_custom, dstrappend_base)(__VA_ARGS__)
 
+#define GET_DSTRTRIM(_1, _2, NAME, ...) NAME
+#define dstrtrim(...)                                                          \
+    GET_DSTRTRIM(__VA_ARGS__, dstrtrim_custom, dstrtrim_base)(__VA_ARGS__)
+
 #define W_UNUSED_RESULT __attribute__((warn_unused_result))
 
 typedef char* dstr;
@@ -137,6 +141,20 @@ ssize_t dstrfind(dstr s, const char* needle) W_UNUSED_RESULT;
  * No-op if s is NULL or empty.
  */
 void dstrrange(dstr s, ssize_t start, ssize_t end);
+
+/*
+ * dstrtrim(s)
+ * dstrtrim(s, cutset)
+ *
+ * Strip leading and trailing bytes from s, in place. The one-argument form
+ * strips ASCII whitespace (' ', '\t', '\n', '\v', '\f', '\r'); the
+ * two-argument form strips any byte found in the null-terminated cutset
+ * instead. No allocation, no new pointer: the kept slice is shifted with
+ * memmove and truncated in place. No-op if s is NULL, empty, or (for the
+ * two-argument form) if cutset is NULL or empty.
+ */
+void dstrtrim_base(dstr s);
+void dstrtrim_custom(dstr s, const char* cutset);
 
 /*
  * dstrsplit(s, delim, out_count)
@@ -281,6 +299,19 @@ dstr dstrcat_custom(dstr s1, const char* s2, size_t cap) W_UNUSED_RESULT;
  */
 dstr dstrappend_base(dstr s1, const dstr s2) W_UNUSED_RESULT;
 dstr dstrappend_custom(dstr s1, const dstr s2, size_t cap) W_UNUSED_RESULT;
+
+/*
+ * dstrinsert(s1, idx, s2)
+ *
+ * Insert the null-terminated string s2 into s1 at idx, in place. Negative
+ * indices count from the end of the string, as in s[len + idx]. Out-of-range
+ * indices are clamped instead of erroring, so an idx at or before the start
+ * prepends and an idx at or past the end appends.
+ * May reallocate s1; always use the returned pointer.
+ * Returns s1 unchanged if s1 or s2 is NULL, or if s2 is empty.
+ * Returns NULL on allocation failure.
+ */
+dstr dstrinsert(dstr s1, ssize_t idx, const char* s2) W_UNUSED_RESULT;
 
 /*
  * dstrauto
