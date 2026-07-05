@@ -225,6 +225,80 @@ void dstrrange(dstr s, ssize_t start, ssize_t end)
     _dstr_set_len(hd, newlen, t);
 }
 
+static inline bool _dstr_is_space(unsigned char c)
+{
+    return c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f' ||
+           c == '\r';
+}
+
+// dstrtrim
+void dstrtrim_base(dstr s)
+{
+    enum dstrhd_type t;
+    void* hd = _dstr_get_hdr_and_type(s, &t);
+    if (!hd)
+        return;
+
+    size_t len = dstrlen(s);
+    if (len == 0)
+        return;
+
+    size_t start = 0;
+    while (start < len && _dstr_is_space((unsigned char)s[start]))
+        start++;
+
+    size_t end = len;
+    while (end > start && _dstr_is_space((unsigned char)s[end - 1]))
+        end--;
+
+    size_t newlen = end - start;
+    if (start)
+        memmove(s, s + start, newlen);
+    s[newlen] = '\0';
+    _dstr_set_len(hd, newlen, t);
+}
+
+static inline void _dstr_cutset_bitmap(const char* cutset, uint64_t bitmap[4])
+{
+    bitmap[0] = bitmap[1] = bitmap[2] = bitmap[3] = 0;
+    for (const unsigned char* p = (const unsigned char*)cutset; *p; p++)
+        bitmap[*p >> 6] |= (uint64_t)1 << (*p & 63);
+}
+
+static inline bool _dstr_in_bitmap(const uint64_t bitmap[4], unsigned char c)
+{
+    return (bitmap[c >> 6] >> (c & 63)) & 1;
+}
+
+void dstrtrim_custom(dstr s, const char* cutset)
+{
+    enum dstrhd_type t;
+    void* hd = _dstr_get_hdr_and_type(s, &t);
+    if (!hd || !cutset || cutset[0] == '\0')
+        return;
+
+    size_t len = dstrlen(s);
+    if (len == 0)
+        return;
+
+    uint64_t bitmap[4];
+    _dstr_cutset_bitmap(cutset, bitmap);
+
+    size_t start = 0;
+    while (start < len && _dstr_in_bitmap(bitmap, (unsigned char)s[start]))
+        start++;
+
+    size_t end = len;
+    while (end > start && _dstr_in_bitmap(bitmap, (unsigned char)s[end - 1]))
+        end--;
+
+    size_t newlen = end - start;
+    if (start)
+        memmove(s, s + start, newlen);
+    s[newlen] = '\0';
+    _dstr_set_len(hd, newlen, t);
+}
+
 // dstrsplit
 dstr* dstrsplit(dstr s, const char* delim, size_t* out_count)
 {
@@ -559,6 +633,63 @@ dstr dstrappend_custom(dstr s1, const dstr s2, size_t cap)
     if (!s1 || !s2)
         return s1;
     return _dstr_concat_impl(s1, dstrlen(s1), s2, dstrlen(s2), cap);
+}
+
+// dstrinsert
+dstr dstrinsert(dstr s1, ssize_t idx, const char* s2)
+{
+    if (!s1 || !s2)
+        return s1;
+
+    size_t s1_len = dstrlen(s1);
+    size_t s2_len = strlen(s2);
+    if (s2_len == 0)
+        return s1;
+    if (s2_len > SIZE_MAX - s1_len)
+        return NULL;
+
+    if (idx < 0) {
+        idx += (ssize_t)s1_len;
+        if (idx < 0)
+            idx = 0;
+    }
+    size_t pos = ((size_t)idx > s1_len) ? s1_len : (size_t)idx;
+    size_t new_len = s1_len + s2_len;
+
+    uintptr_t s1_addr = (uintptr_t)s1;
+    uintptr_t s2_addr = (uintptr_t)s2;
+    size_t s1_cap = dstrcap(s1);
+    bool s2_aliases_s1 = s2_addr >= s1_addr && s2_addr - s1_addr < s1_cap;
+    size_t s2_offset = s2_aliases_s1 ? (size_t)(s2_addr - s1_addr) : 0;
+
+    dstr tmp = dstrreserve(s1, _dstr_grow_cap(s1_cap, new_len + 1));
+    if (!tmp)
+        return NULL;
+    s1 = tmp;
+
+    if (s2_aliases_s1)
+        s2 = s1 + s2_offset;
+
+    enum dstrhd_type t;
+    void* hd = _dstr_get_hdr_and_type(s1, &t);
+
+    size_t tail_len = s1_len - pos + 1;
+
+    if (s2_aliases_s1 && s2_offset + s2_len > pos) {
+        char* scratch = DSTR_MALLOC(s2_len);
+        if (!scratch)
+            return NULL;
+        memcpy(scratch, s2, s2_len);
+        memmove(s1 + pos + s2_len, s1 + pos, tail_len);
+        memcpy(s1 + pos, scratch, s2_len);
+        DSTR_FREE(scratch);
+    } else {
+        memmove(s1 + pos + s2_len, s1 + pos, tail_len);
+        memcpy(s1 + pos, s2, s2_len);
+    }
+
+    _dstr_set_len(hd, new_len, t);
+    return s1;
 }
 
 // strnew
