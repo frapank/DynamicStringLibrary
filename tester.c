@@ -443,6 +443,72 @@ static void test_growth_correctness_across_reallocs(void) {
     dstrfree(s);
 }
 
+static void test_trim_whitespace_basic(void) {
+    dstr s = dstrnew("   Hello World   ");
+    dstrtrim(s);
+    ASSERT_STR_EQUAL("Hello World", s);
+    ASSERT_TRUE(dstrlen(s) == 11);
+    dstrfree(s);
+
+    s = dstrnew("\t\n  data \r\v\f");
+    dstrtrim(s);
+    ASSERT_STR_EQUAL("data", s);
+    dstrfree(s);
+}
+
+static void test_trim_no_change(void) {
+    dstr s = dstrnew("nothing to trim");
+    size_t cap = dstrcap(s);
+    dstrtrim(s);
+    ASSERT_STR_EQUAL("nothing to trim", s);
+    ASSERT_TRUE(dstrcap(s) == cap);
+    dstrfree(s);
+}
+
+static void test_trim_all_whitespace(void) {
+    dstr s = dstrnew("   \t\n  ");
+    dstrtrim(s);
+    ASSERT_STR_EQUAL("", s);
+    ASSERT_TRUE(dstrlen(s) == 0);
+    dstrfree(s);
+}
+
+static void test_trim_empty_and_null(void) {
+    dstr s = dstrnew("");
+    dstrtrim(s);
+    ASSERT_STR_EQUAL("", s);
+    dstrfree(s);
+
+    dstrtrim(NULL);
+    ASSERT_TRUE(true);
+}
+
+static void test_trim_custom_cutset(void) {
+    dstr s = dstrnew("xxxHelloxxx");
+    dstrtrim(s, "x");
+    ASSERT_STR_EQUAL("Hello", s);
+    dstrfree(s);
+
+    s = dstrnew("-+-value-+-");
+    dstrtrim(s, "+-");
+    ASSERT_STR_EQUAL("value", s);
+    dstrfree(s);
+}
+
+static void test_trim_custom_cutset_edge_cases(void) {
+    dstr s = dstrnew("abc");
+    dstrtrim(s, "");
+    ASSERT_STR_EQUAL("abc", s);
+
+    dstrtrim(s, NULL);
+    ASSERT_STR_EQUAL("abc", s);
+
+    dstrtrim(s, "abc");
+    ASSERT_STR_EQUAL("", s);
+
+    dstrfree(s);
+}
+
 static void test_insert_basic(void) {
     dstr s = dstrnew("Hello World");
     s = dstrinsert(s, 5, ",");
@@ -580,6 +646,12 @@ int main(void) {
     RUN_TEST(test_split_independent_allocations);
     RUN_TEST(test_growth_no_unnecessary_realloc);
     RUN_TEST(test_growth_correctness_across_reallocs);
+    RUN_TEST(test_trim_whitespace_basic);
+    RUN_TEST(test_trim_no_change);
+    RUN_TEST(test_trim_all_whitespace);
+    RUN_TEST(test_trim_empty_and_null);
+    RUN_TEST(test_trim_custom_cutset);
+    RUN_TEST(test_trim_custom_cutset_edge_cases);
     RUN_TEST(test_insert_basic);
     RUN_TEST(test_insert_prepend_and_append);
     RUN_TEST(test_insert_negative_index);
