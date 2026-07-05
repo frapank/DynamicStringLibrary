@@ -678,7 +678,7 @@ dstr dstrinsert(dstr s1, ssize_t idx, const char* s2)
     if (s2_aliases_s1 && s2_offset + s2_len > pos) {
         char* scratch = DSTR_MALLOC(s2_len);
         if (!scratch)
-            return NULL;
+            return s1;
         memcpy(scratch, s2, s2_len);
         memmove(s1 + pos + s2_len, s1 + pos, tail_len);
         memcpy(s1 + pos, scratch, s2_len);

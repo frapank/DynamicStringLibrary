@@ -309,7 +309,8 @@ dstr dstrappend_custom(dstr s1, const dstr s2, size_t cap) W_UNUSED_RESULT;
  * prepends and an idx at or past the end appends.
  * May reallocate s1; always use the returned pointer.
  * Returns s1 unchanged if s1 or s2 is NULL, or if s2 is empty.
- * Returns NULL on allocation failure.
+ * Returns NULL if growing s1 fails; if s1 grew but a later internal
+ * allocation fails, returns s1 unchanged (already-reserved capacity kept).
  */
 dstr dstrinsert(dstr s1, ssize_t idx, const char* s2) W_UNUSED_RESULT;
 
