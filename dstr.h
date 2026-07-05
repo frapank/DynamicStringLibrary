@@ -37,20 +37,22 @@ typedef ptrdiff_t ssize_t;
 
 #define GET_DSTRPUSH(_1, _2, _3, NAME, ...) NAME
 #define dstrpush(...)                                                          \
-    GET_DSTRPUSH(__VA_ARGS__, dstrpush_custom, dstrpush_base, IGNORED)(__VA_ARGS__)
+    GET_DSTRPUSH(__VA_ARGS__, dstrpush_custom, dstrpush_base, IGNORED)(        \
+        __VA_ARGS__)
 
 #define GET_DSTRCAT(_1, _2, _3, NAME, ...) NAME
-#define dstrcat(...)                                                          \
+#define dstrcat(...)                                                           \
     GET_DSTRCAT(__VA_ARGS__, dstrcat_custom, dstrcat_base, IGNORED)(__VA_ARGS__)
 
 #define GET_DSTRAPPEND(_1, _2, _3, NAME, ...) NAME
 #define dstrappend(...)                                                        \
-    GET_DSTRAPPEND(__VA_ARGS__, dstrappend_custom, dstrappend_base,           \
-                    IGNORED)(__VA_ARGS__)
+    GET_DSTRAPPEND(__VA_ARGS__, dstrappend_custom, dstrappend_base, IGNORED)(  \
+        __VA_ARGS__)
 
 #define GET_DSTRTRIM(_1, _2, NAME, ...) NAME
 #define dstrtrim(...)                                                          \
-    GET_DSTRTRIM(__VA_ARGS__, dstrtrim_custom, dstrtrim_base, IGNORED)(__VA_ARGS__)
+    GET_DSTRTRIM(__VA_ARGS__, dstrtrim_custom, dstrtrim_base, IGNORED)(        \
+        __VA_ARGS__)
 
 #define W_UNUSED_RESULT __attribute__((warn_unused_result))
 
