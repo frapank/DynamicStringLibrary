@@ -33,23 +33,24 @@ typedef ptrdiff_t ssize_t;
 
 #define GET_DSTRNEW(_1, _2, NAME, ...) NAME
 #define dstrnew(...)                                                           \
-    GET_DSTRNEW(__VA_ARGS__, dstrnew_custom, dstrnew_base)(__VA_ARGS__)
+    GET_DSTRNEW(__VA_ARGS__, dstrnew_custom, dstrnew_base, IGNORED)(__VA_ARGS__)
 
 #define GET_DSTRPUSH(_1, _2, _3, NAME, ...) NAME
 #define dstrpush(...)                                                          \
-    GET_DSTRPUSH(__VA_ARGS__, dstrpush_custom, dstrpush_base)(__VA_ARGS__)
+    GET_DSTRPUSH(__VA_ARGS__, dstrpush_custom, dstrpush_base, IGNORED)(__VA_ARGS__)
 
 #define GET_DSTRCAT(_1, _2, _3, NAME, ...) NAME
-#define dstrcat(...)                                                           \
-    GET_DSTRCAT(__VA_ARGS__, dstrcat_custom, dstrcat_base)(__VA_ARGS__)
+#define dstrcat(...)                                                          \
+    GET_DSTRCAT(__VA_ARGS__, dstrcat_custom, dstrcat_base, IGNORED)(__VA_ARGS__)
 
 #define GET_DSTRAPPEND(_1, _2, _3, NAME, ...) NAME
 #define dstrappend(...)                                                        \
-    GET_DSTRAPPEND(__VA_ARGS__, dstrappend_custom, dstrappend_base)(__VA_ARGS__)
+    GET_DSTRAPPEND(__VA_ARGS__, dstrappend_custom, dstrappend_base,           \
+                    IGNORED)(__VA_ARGS__)
 
 #define GET_DSTRTRIM(_1, _2, NAME, ...) NAME
 #define dstrtrim(...)                                                          \
-    GET_DSTRTRIM(__VA_ARGS__, dstrtrim_custom, dstrtrim_base)(__VA_ARGS__)
+    GET_DSTRTRIM(__VA_ARGS__, dstrtrim_custom, dstrtrim_base, IGNORED)(__VA_ARGS__)
 
 #define W_UNUSED_RESULT __attribute__((warn_unused_result))
 
@@ -338,7 +339,7 @@ static inline void _dstr_autofree(dstr* s)
  */
 #if DSTR_SHORTCUT_ENABLED
 #define GET_DOLLAR(_1, _2, NAME, ...) NAME
-#define $(...) GET_DOLLAR(__VA_ARGS__, $_custom, $_base)(__VA_ARGS__)
+#define $(...) GET_DOLLAR(__VA_ARGS__, $_custom, $_base, IGNORED)(__VA_ARGS__)
 #define $_base(str) dstrnew_base(str)
 #define $_custom(str, cap) dstrnew_custom(str, cap)
 #endif
