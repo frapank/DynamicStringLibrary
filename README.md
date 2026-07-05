@@ -181,6 +181,16 @@ dstrrange(s, 2, -1);  // keep from index 2 to the last character
 
 Keeps only the `[start, end]` slice of `s`, in place (`end` is inclusive). Negative indices count from the end of the string, i.e. `-1` is the last character. Out-of-range indices are clamped instead of erroring, and a `start` past `end` or past the end of the string yields an empty `dstr`. No allocation happens: the existing buffer is shifted with `memmove` and truncated in place. No-op if `s` is `NULL` or empty.
 
+### Insert
+
+```c
+s = dstrinsert(s, 5, ", ");  // insert at index 5
+s = dstrinsert(s, 0, ">> "); // prepend
+s = dstrinsert(s, -1, "!");  // insert before the last character
+```
+
+Inserts the null-terminated string `s2` into `s1` at `idx`, in place. Negative indices count from the end of the string, as in `dstrrange`. Out-of-range indices are clamped instead of erroring. May reallocate `s1`; always use the returned pointer.
+
 ### Split
 
 ```c
@@ -232,7 +242,6 @@ dstr s = $("hello", 64);
 
 ## Roadmap
 
-- **dstrinsert** — insert substring at a given index
 - **dstrtrim** — strip leading/trailing whitespace or a given charset
 
 ## License
