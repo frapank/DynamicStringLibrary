@@ -468,6 +468,9 @@ dstr dstrreserve(dstr s, size_t new_cap)
     size_t old_hd_size = _dstr_size_by_type(old_type);
     size_t new_hd_size = _dstr_size_by_type(new_type);
 
+    if (new_cap > SIZE_MAX - new_hd_size)
+        return NULL;
+
     void* old_hd = (char*)s - old_hd_size;
 
     if (old_type == new_type) {
@@ -698,6 +701,9 @@ static dstr _dstrnew_allocator(enum dstrhd_type t,
                                size_t s_len,
                                size_t alloc_size)
 {
+    if (alloc_size > SIZE_MAX - _dstr_size_by_type(t))
+        return NULL;
+
     switch (t) {
         case DSTRHD_TYPE_8: {
             struct dstrhd8* hd = DSTR_MALLOC(sizeof(*hd) + alloc_size);
