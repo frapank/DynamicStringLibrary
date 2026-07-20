@@ -169,7 +169,9 @@ void dstrtrim_custom(dstr s, const char* cutset);
  * Returns NULL (and *out_count = 0) if s or delim is NULL, delim is
  * empty, or on allocation failure. Free the result with dstrsplitfree.
  */
-dstr* dstrsplit(dstr s, const char* delim, size_t* out_count) W_UNUSED_RESULT;
+dstr* dstrsplit(dstr restrict s,
+                const char* restrict delim,
+                size_t* restrict out_count) W_UNUSED_RESULT;
 
 /*
  * dstrsplitfree(parts, count)
