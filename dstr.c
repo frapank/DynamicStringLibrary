@@ -84,7 +84,8 @@ static inline void _dstr_set_cap(void* hd,
     }
 }
 
-static inline void* _dstr_get_hdr_and_type(dstr s, enum dstrhd_type* t_out)
+static inline void* _dstr_get_hdr_and_type(dstr restrict s,
+                                           enum dstrhd_type* restrict t_out)
 {
     if (!s)
         return NULL;
@@ -258,7 +259,8 @@ void dstrtrim_base(dstr s)
     _dstr_set_len(hd, newlen, t);
 }
 
-static inline void _dstr_cutset_bitmap(const char* cutset, uint64_t bitmap[4])
+static inline void _dstr_cutset_bitmap(const char* restrict cutset,
+                                       uint64_t bitmap[restrict 4])
 {
     bitmap[0] = bitmap[1] = bitmap[2] = bitmap[3] = 0;
     for (const unsigned char* p = (const unsigned char*)cutset; *p; p++)
@@ -300,7 +302,9 @@ void dstrtrim_custom(dstr s, const char* cutset)
 }
 
 // dstrsplit
-dstr* dstrsplit(dstr s, const char* delim, size_t* out_count)
+dstr* dstrsplit(dstr restrict s,
+                const char* restrict delim,
+                size_t* restrict out_count)
 {
     if (out_count)
         *out_count = 0;
